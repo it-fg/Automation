@@ -674,7 +674,7 @@ function renderRoute() {
   }
   window.scrollTo(0, 0);
   const scrollBtn = document.getElementById("btn-scroll-top");
-  if (scrollBtn) scrollBtn.classList.toggle("hidden", !hash.startsWith("#dept/"));
+  if (scrollBtn) scrollBtn.classList.remove("hidden");
 }
 
 function currentDeptName() {
