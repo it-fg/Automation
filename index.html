@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FG H.O — Automation Dashboard</title>
+<title>FG H.O — Cổng Báo cáo Điều hành</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #16130f;
@@ -15,6 +18,24 @@
     --brand-gold: #ebc100;
     --border: #38332a;
     --error: #ff6b6b;
+
+    --surface-0: #f5f5f4;
+    --surface-1: #ffffff;
+    --surface-2: #f9f8f6;
+    --border-lt: #e6e4df;
+    --text-primary: #16130f;
+    --text-secondary: #52514e;
+    --text-muted: #85837d;
+    --brand-red-ink: #a5001a;
+    --warn-bg: #fef3c7;
+    --warn-border: #f2c94c;
+    --warn-ink: #7c4a03;
+    --good-bg: rgba(27,175,122,.12);
+    --good-ink: #128a5f;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --shadow: 0 1px 2px rgba(20,18,14,.04), 0 4px 16px rgba(20,18,14,.06);
   }
   * { box-sizing: border-box; }
   body {
@@ -28,6 +49,9 @@
     justify-content: center;
     padding: 24px;
   }
+  body.wide { display: block; background: var(--surface-0); color: var(--text-primary); padding: 0 0 48px; }
+
+  /* ---------- Login / change-password cards (dark gate) ---------- */
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -36,62 +60,176 @@
     width: 100%;
     max-width: 420px;
   }
-  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
-  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
-  select, input[type="password"], input[type="text"] {
-    width: 100%;
-    padding: 10px 12px;
-    background: #0f0d0a;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
+  .card h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .card .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+  .card label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
+  .card select, .card input[type="password"], .card input[type="text"] {
+    width: 100%; padding: 10px 12px; background: #0f0d0a; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px;
   }
-  button {
-    width: 100%;
-    padding: 11px;
-    margin-top: 20px;
-    border: none;
-    border-radius: 8px;
-    background: var(--brand-red);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
+  .card button {
+    width: 100%; padding: 11px; margin-top: 20px; border: none; border-radius: 8px;
+    background: var(--brand-red); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
   }
-  button:hover { background: var(--brand-red-hover); }
-  button.secondary {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .card button:hover { background: var(--brand-red-hover); }
+  .card button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .card button:disabled { opacity: 0.5; cursor: not-allowed; }
   .msg { font-size: 13px; margin-top: 12px; line-height: 1.5; }
   .msg.error { color: var(--error); }
   .msg.success { color: #4caf7d; }
   .msg.hint { color: var(--brand-gold); }
   .hidden { display: none !important; }
-  .content-box {
-    white-space: pre-wrap;
-    background: #0f0d0a;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    font-size: 13px;
-    margin-top: 16px;
-    max-height: 320px;
-    overflow: auto;
-  }
   .row { display: flex; gap: 10px; margin-top: 20px; }
   .row button { margin-top: 0; }
   .footer-note { color: var(--muted); font-size: 11px; margin-top: 20px; line-height: 1.5; }
+
+  /* ---------- App shell (light, post-login) ---------- */
+  .app-wrap { max-width: 1320px; margin: 0 auto; padding: 0 20px; }
+  .hero { background: linear-gradient(135deg, #fff 0%, #fdf6ee 60%, #fdf1e4 100%); border-bottom: 3px solid var(--brand-red); padding: 20px 0 16px; }
+  .herotop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 12px; flex-wrap: wrap; }
+  .usermenu { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-secondary); }
+  .usermenu b { color: var(--text-primary); }
+  .usermenu button.linklike { background: none; border: none; padding: 0; color: var(--brand-red-ink); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; }
+  .herobrand { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 2px 0 4px; }
+  .herobrand .logo-col { justify-self: start; }
+  .herobrand .logo-col svg { height: 36px; width: auto; display: block; }
+  .herobrand .text-col { text-align: center; }
+  .heroname { font-size: 20px; font-weight: 900; letter-spacing: .4px; color: var(--brand-red-ink); line-height: 1.15; }
+  .heromission { font-size: 11.5px; font-style: italic; color: var(--text-secondary); margin: 3px auto 0; max-width: 460px; }
+  .updatedbadge {
+    font-size: 12.5px; color: var(--text-secondary); background: var(--surface-1);
+    border: 1px solid var(--border-lt); border-radius: 20px; padding: 7px 14px;
+    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; box-shadow: var(--shadow);
+  }
+  .updatedbadge .ub-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
+  .updatedbadge .ub-value { font-weight: 700; color: var(--text-primary); font-size: 13px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #1baf7a; }
+  .crumb { font-size: 12.5px; color: var(--text-muted); margin-top: 14px; }
+  .crumb a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
+  .pagehead h1 { font-size: 20px; margin: 6px 0 2px; font-weight: 700; color: var(--text-primary); }
+  .pagehead .subtitle { color: var(--text-secondary); font-size: 13.5px; }
+  .home-h1 { font-size: 22px; margin: 18px 0 3px; font-weight: 700; color: var(--text-primary); }
+  .greet { margin-top: 24px; font-size: 13.5px; color: var(--text-secondary); }
+  .greet b { color: var(--text-primary); }
+
+  /* Department grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 14px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 14px;
+    padding: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
+  }
+  .tile.active { cursor: pointer; }
+  .tile:hover { transform: translateY(-4px); box-shadow: 0 3px 6px rgba(20,18,14,.08), 0 14px 30px rgba(20,18,14,.14); }
+  .tile.active:hover { border-color: rgba(200,0,31,.25); }
+  .tile.soon { opacity: .55; }
+  .tile.soon:hover { opacity: .85; }
+  .tile .icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; }
+  .tile.active .icon { background: rgba(200,0,31,.09); }
+  .tile.soon .icon { background: var(--surface-2); }
+  .tile .name { font-size: 15.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
+  .tile .desc { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; min-height: 34px; }
+  .tile .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .tile.active .badge { background: rgba(27,175,122,.12); color: #128a5f; }
+  .tile.soon .badge { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-lt); }
+  .tile .preview { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-lt); display: flex; gap: 16px; }
+  .tile .preview .stat .v { font-size: 15px; font-weight: 700; }
+  .tile .preview .stat .l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
+  .tile .arrow { position: absolute; top: 18px; right: 18px; color: var(--text-muted); font-size: 16px; }
+  .tile.active .arrow { color: var(--brand-red-ink); }
+
+  .corevalues-wrap { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--border-lt); }
+  .corevalues { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; }
+  .cv { display: flex; align-items: center; gap: 10px; }
+  .cv .cvicon { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-1); border: 1px solid var(--border-lt); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .cv .cvname { font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+  .footnote-center { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 22px; }
+
+  /* Dept shell: sidebar + main */
+  .shell { display: flex; align-items: flex-start; gap: 28px; margin-top: 20px; }
+  .sidebar { width: 216px; flex-shrink: 0; position: sticky; top: 20px; }
+  .sidebar .backlink { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 18px; cursor: pointer; }
+  .sidebar .deptlabel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 0 0 10px 2px; }
+  .navitem { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; transition: transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease; }
+  .navitem .ic { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
+  .navitem.active { background: var(--surface-1); border: 1px solid var(--border-lt); box-shadow: var(--shadow); color: var(--text-primary); font-weight: 700; border-left: 3px solid var(--brand-red); padding-left: 8px; }
+  .navitem:hover { background: var(--surface-1); box-shadow: 0 2px 4px rgba(20,18,14,.06), 0 8px 18px rgba(20,18,14,.10); transform: translateY(-2px); }
+  .navitem.soon { opacity: .5; }
+  .navitem.soon:hover { opacity: .8; }
+  .navitem .soontag { margin-left: auto; font-size: 9px; background: var(--surface-2); border: 1px solid var(--border-lt); padding: 1px 6px; border-radius: 10px; color: var(--text-muted); flex-shrink: 0; }
+  .main { flex: 1; min-width: 0; }
+
+  .alertbox { margin: 0; background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px; padding: 12px 16px; color: var(--warn-ink); font-size: 13px; display: flex; gap: 10px; align-items: flex-start; }
+  .alertbox strong { display: block; margin-bottom: 2px; font-size: 13.5px; }
+
+  .app-section { margin-top: 26px; }
+  .app-section:first-child { margin-top: 0; }
+  .sectiontitle { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+  .sectiontitle .idx { width: 20px; height: 20px; border-radius: 5px; background: var(--brand-red); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+
+  .kpirow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kpi { background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .kpi .label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+  .kpi .value { font-size: 20px; font-weight: 700; margin-top: 5px; color: var(--text-primary); }
+  .kpi .foot { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; }
+  .kpi .value.red { color: var(--brand-red-ink); }
+
+  .smgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .smcard { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 16px 12px; box-shadow: var(--shadow); }
+  .smcard .smtitle { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .smcard .smunit { font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .smrow { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .smrow .swname { font-size: 10.5px; color: var(--text-secondary); width: 46px; flex-shrink: 0; }
+  .smrow .smtrack { flex: 1; background: var(--surface-2); border-radius: 4px; height: 14px; position: relative; overflow: hidden; }
+  .smrow .smbar { height: 100%; border-radius: 4px; }
+  .smrow .smval { font-size: 10px; font-weight: 700; width: 54px; text-align: right; flex-shrink: 0; color: var(--text-primary); }
+  .smrow.best .swname { font-weight: 700; color: var(--text-primary); }
+  .smtag { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; color: var(--good-ink); background: var(--good-bg); padding: 1px 6px; border-radius: 20px; margin-top: 8px; }
+
+  .radarlabel { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin: 18px 0 10px; }
+  .radargrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .radarmini { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 14px 12px; box-shadow: var(--shadow); text-align: center; }
+  .radarmini .rm-title { font-size: 12.5px; font-weight: 700; color: var(--text-primary); }
+  .radarmini .rm-unit { font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; }
+  .radar-svg { width: 100%; max-width: 200px; height: auto; }
+  .rgrid { fill: none; stroke: var(--border-lt); stroke-width: 1; }
+  .raxis { stroke: var(--border-lt); stroke-width: 1; }
+  .rlabel { font-size: 12px; fill: var(--text-secondary); font-weight: 700; }
+  .rm-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--good-ink); background: var(--good-bg); padding: 2px 9px; border-radius: 20px; margin-top: 6px; }
+
+  table.cmp { width: 100%; border-collapse: collapse; background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); font-size: 13px; }
+  table.cmp th, table.cmp td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border-lt); }
+  table.cmp th { background: var(--surface-2); font-weight: 600; color: var(--text-secondary); font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+  table.cmp td.metric { color: var(--text-secondary); white-space: nowrap; }
+  table.cmp tr:last-child td { border-bottom: none; }
+  table.cmp td.hl { font-weight: 700; color: var(--brand-red-ink); }
+  table.cmp td { color: var(--text-primary); }
+  .vendorhead { display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .refnote { font-size: 12.5px; color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border-lt); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
+  .refnote b { color: var(--text-primary); }
+  .verify { color: var(--brand-gold); font-weight: 600; }
+
+  .cardgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .vcard { background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
+  .vcard .vtitle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .vcard .vname { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+  .badge-expired { background: var(--warn-bg); color: var(--warn-ink); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--warn-border); }
+  .vcard dl { margin: 0; font-size: 12.5px; }
+  .vcard dl div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border-lt); }
+  .vcard dl div:last-child { border-bottom: none; }
+  .vcard dl dt { color: var(--text-muted); }
+  .vcard dl dd { margin: 0; font-weight: 500; text-align: right; color: var(--text-primary); }
+
+  .app-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border-lt); font-size: 11.5px; color: var(--text-muted); }
+  @media (max-width: 980px) { .shell { flex-direction: column; } .sidebar { width: 100%; position: static; } }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } .kpirow, .smgrid { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
 
 <div class="card" id="login-card">
-  <h1>FG H.O — Automation Dashboard</h1>
+  <h1>FG H.O — Cổng Báo cáo Điều hành</h1>
   <p class="subtitle">Nội dung được mã hoá — vui lòng đăng nhập để xem.</p>
 
   <label for="login-person">Vai trò</label>
@@ -108,17 +246,6 @@
   <div id="login-msg" class="msg"></div>
 
   <p class="footer-note">Đây là lớp bảo vệ phía trình duyệt cho dữ liệu nội bộ FG H.O. Không chia sẻ mật khẩu này với người ngoài đơn vị.</p>
-</div>
-
-<div class="card hidden" id="dashboard-card">
-  <h1>Nội dung Dashboard</h1>
-  <p class="subtitle" id="dashboard-who"></p>
-  <div class="content-box" id="dashboard-content"></div>
-
-  <div class="row">
-    <button class="secondary" id="btn-change-pw">Đổi mật khẩu</button>
-    <button class="secondary" id="btn-logout">Đăng xuất</button>
-  </div>
 </div>
 
 <div class="card hidden" id="change-pw-card">
@@ -138,11 +265,50 @@
   <div id="change-pw-msg" class="msg"></div>
 </div>
 
+<div class="hidden" id="app-shell">
+  <header class="hero">
+    <div class="app-wrap herotop">
+      <div class="usermenu">
+        <span>Xin chào, <b id="um-person">—</b></span>
+        <button class="linklike" id="btn-change-pw">Đổi mật khẩu</button>
+        <button class="linklike" id="btn-logout">Đăng xuất</button>
+      </div>
+      <div class="updatedbadge">
+        <div class="ub-label"><span class="dot"></span> Cập nhật dữ liệu gần nhất</div>
+        <div class="ub-value" id="hero-updated">—</div>
+      </div>
+    </div>
+    <div class="app-wrap herobrand">
+      <div class="logo-col">
+        <svg width="140" height="31" viewBox="0 0 225 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M130.627 46.1635C129.649 47.3336 128.278 48.2363 126.498 48.8799C124.717 49.5235 122.745 49.8412 120.58 49.8412C118.307 49.8412 116.309 49.348 114.595 48.3534C112.882 47.3587 111.561 45.9211 110.625 44.0321C109.689 42.1431 109.213 39.9197 109.188 37.3704V35.5817C109.188 32.9572 109.631 30.692 110.516 28.7696C111.402 26.8555 112.673 25.3845 114.345 24.3647C116.008 23.345 117.964 22.8435 120.196 22.8435C123.313 22.8435 125.746 23.5874 127.501 25.0752C129.256 26.563 130.301 28.7278 130.627 31.5613H125.361C125.119 30.0568 124.584 28.9535 123.765 28.2598C122.937 27.566 121.809 27.215 120.363 27.215C118.524 27.215 117.12 27.9087 116.158 29.2879C115.197 30.6754 114.712 32.7315 114.696 35.4563V37.1364C114.696 39.8947 115.222 41.9759 116.267 43.3801C117.312 44.7843 118.85 45.4948 120.873 45.4948C122.895 45.4948 124.358 45.0602 125.219 44.1993V39.669H120.296V35.682H130.635V46.1635H130.627Z" fill="#666666"/>
+          <path d="M143.297 39.953H138.867V49.8243H133.308V22.8601H143.33C146.515 22.8601 148.972 23.5706 150.702 24.9915C152.432 26.4124 153.293 28.4184 153.293 31.0096C153.293 32.8484 152.892 34.3863 152.098 35.615C151.304 36.8437 150.092 37.8216 148.479 38.5488L154.313 49.5652V49.8243H148.354L143.297 39.953ZM138.867 35.4562H143.347C144.743 35.4562 145.821 35.1052 146.59 34.3947C147.351 33.6842 147.735 32.7063 147.735 31.4609C147.735 30.2155 147.376 29.1874 146.648 28.4602C145.93 27.733 144.818 27.3653 143.322 27.3653H138.858V35.4562H138.867Z" fill="#666666"/>
+          <path d="M178.436 36.9357C178.436 39.5184 177.976 41.7835 177.065 43.7311C176.154 45.6786 174.842 47.1831 173.145 48.2362C171.44 49.2894 169.492 49.8243 167.294 49.8243C165.096 49.8243 163.182 49.2977 161.477 48.2529C159.771 47.2081 158.451 45.712 157.515 43.7728C156.579 41.8337 156.102 39.602 156.094 37.0777V35.7822C156.094 33.1995 156.562 30.926 157.49 28.9617C158.417 26.9975 159.738 25.493 161.435 24.4398C163.132 23.3867 165.079 22.8601 167.269 22.8601C169.459 22.8601 171.398 23.3867 173.095 24.4398C174.792 25.493 176.112 26.9975 177.04 28.9617C177.968 30.926 178.436 33.1911 178.436 35.7655V36.9357ZM172.953 35.7488C172.953 32.9988 172.46 30.9092 171.473 29.48C170.487 28.0507 169.083 27.3318 167.261 27.3318C165.438 27.3318 164.043 28.0423 163.056 29.4465C162.07 30.8591 161.577 32.932 161.56 35.6568V36.9357C161.56 39.6187 162.053 41.6916 163.04 43.171C164.026 44.6505 165.447 45.386 167.294 45.386C169.141 45.386 170.504 44.6755 171.473 43.2463C172.443 41.8253 172.936 39.7441 172.953 37.0193V35.7404V35.7488Z" fill="#666666"/>
+          <path d="M201.538 22.8601V40.3793C201.538 43.288 200.627 45.595 198.805 47.2834C196.983 48.9801 194.501 49.8243 191.341 49.8243C188.182 49.8243 185.766 49.0052 183.944 47.3586C182.122 45.712 181.186 43.4552 181.152 40.5799V22.8601H186.635V40.4128C186.635 42.1513 187.053 43.4218 187.889 44.2242C188.725 45.0182 189.878 45.4194 191.349 45.4194C194.425 45.4194 195.997 43.7979 196.047 40.5632V22.8601H201.547H201.538Z" fill="#666666"/>
+          <path d="M209.812 40.3292V49.8243H204.254V22.8601H214.769C216.791 22.8601 218.572 23.2279 220.11 23.9718C221.648 24.7157 222.826 25.7688 223.654 27.1312C224.481 28.4937 224.899 30.0483 224.899 31.7869C224.899 34.4281 223.996 36.5094 222.182 38.039C220.369 39.5602 217.87 40.3292 214.677 40.3292H209.804H209.812ZM209.812 35.8323H214.777C216.248 35.8323 217.368 35.4897 218.137 34.7959C218.906 34.1022 219.299 33.1159 219.299 31.837C219.299 30.5582 218.906 29.4465 218.129 28.6358C217.351 27.8166 216.281 27.3987 214.911 27.3736H209.82V35.8323H209.812Z" fill="#666666"/>
+          <path d="M62.7295 16.7752L43.3046 29.7641L41.3905 31.0513L41.0896 31.2603L40.9809 31.3355C39.3845 32.4054 38.3815 34.4783 38.2227 36.3756V3.76114C38.2227 0.752109 41.5911 -1.02824 44.0735 0.668514L62.7462 13.4067C63.9415 14.2175 63.9248 15.9811 62.7379 16.7835" fill="#EAC000"/>
+          <path d="M18.1795 12.3035V20.4446C18.1795 20.8291 18.3383 21.1718 18.5891 21.4225C18.8398 21.6733 19.1909 21.8321 19.567 21.8321H27.7248C28.1093 21.8321 28.452 21.9825 28.7028 22.2416C28.9535 22.4924 29.1123 22.8351 29.1123 23.2196V31.3607C29.1123 31.6365 29.0288 31.8956 28.8867 32.1129C28.6443 32.4891 28.2096 32.7398 27.7248 32.7398H19.567C19.1825 32.7398 18.8398 32.8986 18.5891 33.1494C18.3383 33.4001 18.1795 33.7428 18.1795 34.1273V48.6041C18.1795 48.93 18.0625 49.2309 17.8786 49.465C17.6279 49.7826 17.235 49.9916 16.792 49.9916H1.41257C0.977936 49.9916 0.59345 49.791 0.342698 49.4817C0.142096 49.2393 0.0250742 48.9384 0.0250742 48.6041L0 1.38743C0 1.04474 0.125377 0.727104 0.334338 0.484711C0.58509 0.192166 0.961218 0.00830078 1.37914 0.00830078H32.4557C32.8235 0.00830078 33.1578 0.150378 33.4002 0.384414C33.6677 0.635166 33.8348 0.99457 33.8348 1.39577V9.53688C33.8348 9.92137 33.676 10.264 33.4253 10.5148C33.1745 10.7656 32.8318 10.9244 32.4473 10.9244H19.542C19.1909 10.9244 18.8649 11.0581 18.6142 11.2754C18.33 11.5262 18.1545 11.8939 18.1545 12.3119" fill="#FF0000"/>
+          <path d="M96.0478 50H80.5179C80.0916 50 79.7155 49.8077 79.4647 49.5152C79.2558 49.2728 79.1304 48.9552 79.1304 48.6125L79.1137 12.2952C79.1137 11.9609 78.9967 11.66 78.8044 11.4259C78.5537 11.1167 78.1692 10.9161 77.7345 10.9077L67.0859 10.8241C66.8185 10.8241 66.5593 10.7405 66.3337 10.5985L54.5065 2.5493C53.9465 2.18153 53.7877 1.57137 53.9298 1.03643C54.0802 0.476421 54.565 0 55.2671 0H107.633C108.017 0 108.36 0.158802 108.61 0.409554C108.861 0.660306 109.02 1.00301 109.02 1.3875V9.52858C109.02 9.87127 108.895 10.1805 108.694 10.4229C108.443 10.7238 108.059 10.9161 107.633 10.9161H98.8061C98.4216 10.9161 98.0789 11.0665 97.8281 11.3173C97.5774 11.568 97.4186 11.9107 97.4186 12.2952V48.6041C97.4186 49.1391 97.126 49.6071 96.6747 49.8328C96.4824 49.9331 96.2651 49.9916 96.0394 49.9916" fill="#FF0000"/>
+          <path d="M59.0118 25.4598V48.5457C59.0118 49.0054 58.8028 49.3983 58.4936 49.649C58.0339 50.0335 57.3485 50.1255 56.7717 49.741L42.3033 40.179C41.1248 39.4016 40.5648 38.1228 40.6233 36.8774C40.6734 35.749 41.2251 34.6373 42.2866 33.9352L56.7634 24.2562C57.2314 23.9469 57.7747 23.9469 58.2094 24.1642C58.6691 24.3983 59.0034 24.8663 59.0034 25.4514" fill="#FF0000"/>
+        </svg>
+      </div>
+      <div class="text-col">
+        <div class="heroname">TẬP ĐOÀN F.I.T GROUP</div>
+        <div class="heromission">"Nâng tầm chất lượng cuộc sống bằng các sản phẩm &amp; dịch vụ vượt trội"</div>
+      </div>
+      <div></div>
+    </div>
+    <div class="app-wrap pagehead" id="page-head"></div>
+  </header>
+
+  <div class="app-wrap" id="page-body"></div>
+</div>
+
 <script>
 const WORKER_BASE = "https://fg-dashboard-auth.cntt-fg.workers.dev";
 const PBKDF2_ITERATIONS_FALLBACK = 600000;
 
-let session = null; // { person, dekBytes, dekCryptoKey }
+let session = null; // { person, dekBytes, aesKey, hmacKey, auth, data }
 
 function b64ToBytes(b64) {
   const bin = atob(b64);
@@ -159,6 +325,7 @@ function bytesToHex(bytes) {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 function utf8(str) { return new TextEncoder().encode(str); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 async function fetchJson(path) {
   const res = await fetch(path, { cache: "no-store" });
@@ -215,6 +382,206 @@ function checkPasswordStrength(pw) {
   return null;
 }
 
+/* ============== App rendering (post-login, driven entirely by decrypted `data`) ============== */
+
+function fmtCriterionValue(fmt, v) {
+  if (fmt === "trieu") return (v / 1000000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tr ₫";
+  if (fmt === "mbps") return v + " Mbps";
+  return v.toLocaleString("vi-VN");
+}
+
+function sortedEntries(crit) {
+  const arr = Object.keys(crit.values).map((k) => ({ k, v: crit.values[k] }));
+  arr.sort((a, b) => (crit.higherBetter ? b.v - a.v : a.v - b.v));
+  return arr;
+}
+
+function renderHome(data) {
+  const head = document.getElementById("page-head");
+  head.innerHTML =
+    '<h1 class="home-h1">Cổng Báo cáo Điều hành</h1>' +
+    '<div class="subtitle">Tổng hợp báo cáo tự động từ các phòng ban — chọn một phòng ban để xem chi tiết</div>';
+
+  const tiles = data.departments.map((d) => {
+    if (d.status === "active") {
+      const preview = (d.preview || []).map((p) =>
+        '<div class="stat"><div class="v"' + (p.color === "red" ? ' style="color:var(--brand-red-ink)"' : p.color === "amber" ? ' style="color:#c9820c"' : '') + '>' + esc(p.value) + '</div><div class="l">' + esc(p.label) + '</div></div>'
+      ).join("");
+      return '<div class="tile active" data-route="' + esc(d.route) + '">' +
+        '<div class="arrow">→</div>' +
+        '<div class="icon">' + d.icon + '</div>' +
+        '<div class="name">' + esc(d.name) + '</div>' +
+        '<div class="desc">' + esc(d.desc) + '</div>' +
+        '<span class="badge">● Đang cập nhật</span>' +
+        '<div class="preview">' + preview + '</div>' +
+      '</div>';
+    }
+    return '<div class="tile soon">' +
+      '<div class="icon">' + d.icon + '</div>' +
+      '<div class="name">' + esc(d.name) + '</div>' +
+      '<div class="desc">' + esc(d.desc) + '</div>' +
+      '<span class="badge">Sắp ra mắt</span>' +
+    '</div>';
+  }).join("");
+
+  const body = document.getElementById("page-body");
+  body.innerHTML =
+    '<div class="greet">Xin chào, <b>' + esc((session.person || "").toUpperCase()) + '</b> — dưới đây là các báo cáo hiện có.</div>' +
+    '<div class="grid">' + tiles + '</div>' +
+    '<div class="corevalues-wrap">' +
+      '<div class="corevalues">' +
+        '<div class="cv"><div class="cvicon">🤝</div><div class="cvname">Thành tâm</div></div>' +
+        '<div class="cv"><div class="cvicon">🏆</div><div class="cvname">Khát khao chiến thắng</div></div>' +
+        '<div class="cv"><div class="cvicon">🎯</div><div class="cvname">Thực thi hoàn hảo</div></div>' +
+        '<div class="cv"><div class="cvicon">🔄</div><div class="cvname">Cải tiến liên tục</div></div>' +
+        '<div class="cv"><div class="cvicon">🛡️</div><div class="cvname">Tuân thủ</div></div>' +
+      '</div>' +
+      '<div class="footnote-center">Đăng nhập một lần cho toàn bộ cổng báo cáo — mỗi phòng ban sẽ có báo cáo riêng khi sẵn sàng.</div>' +
+    '</div>';
+
+  body.querySelectorAll(".tile.active").forEach((el) => {
+    el.addEventListener("click", () => { location.hash = "#dept/" + el.dataset.route; });
+  });
+}
+
+function renderRadarMini(title, unitText) {
+  return '<div class="radarmini">' +
+    '<div class="rm-title">' + esc(title) + '</div>' +
+    '<div class="rm-unit">' + esc(unitText) + '</div>' +
+    '<svg class="radar-svg" viewBox="0 0 280 190">' +
+      '<polygon class="rgrid" points="140,61 173.77,119.5 106.23,119.5"></polygon>' +
+      '<polygon class="rgrid" points="140,22 207.5,139 72.5,139"></polygon>' +
+      '<line class="raxis" x1="140" y1="100" x2="140" y2="22"></line>' +
+      '<line class="raxis" x1="140" y1="100" x2="207.5" y2="139"></line>' +
+      '<line class="raxis" x1="140" y1="100" x2="72.5" y2="139"></line>' +
+      '<polygon points="140,22 207.5,139 72.5,139" fill="rgba(184,134,11,.14)" stroke="var(--brand-gold)" stroke-width="2" stroke-linejoin="round"></polygon>' +
+      '<circle cx="140" cy="22" r="4.5" fill="var(--series-1)"></circle>' +
+      '<circle cx="207.5" cy="139" r="4.5" fill="var(--series-2)"></circle>' +
+      '<circle cx="72.5" cy="139" r="4.5" fill="var(--series-3)"></circle>' +
+      '<text class="rlabel" x="140" y="12" text-anchor="middle">CMC</text>' +
+      '<text class="rlabel" x="216" y="145" text-anchor="start">FPT IS</text>' +
+      '<text class="rlabel" x="64" y="145" text-anchor="end">Viettel IDC</text>' +
+    '</svg>' +
+    '<span class="rm-tag">✓ Cấu hình giống nhau</span>' +
+  '</div>';
+}
+
+function renderDept(routeId, data) {
+  const report = data.reports[routeId];
+  const dept = data.departments.find((d) => d.route === routeId);
+  if (!report || !dept) { location.hash = "#home"; return; }
+
+  const head = document.getElementById("page-head");
+  head.innerHTML =
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
+    '<h1>' + esc(report.title) + '</h1>' +
+    '<div class="subtitle">' + esc(report.subtitle) + '</div>';
+  head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
+
+  const sidebarItems = report.sidebar.map((s) =>
+    '<div class="navitem' + (s.active ? ' active' : ' soon') + '"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + (s.active ? '' : ' <span class="soontag">Sắp ra mắt</span>') + '</div>'
+  ).join("");
+
+  const kpis = report.kpis.map((k) =>
+    '<div class="kpi"><div class="label">' + esc(k.label) + '</div><div class="value' + (k.color === "red" ? " red" : "") + '">' + esc(k.value) + '</div><div class="foot">' + esc(k.foot) + '</div></div>'
+  ).join("");
+
+  const radarCards = report.hardware.map((h) => renderRadarMini(h.title, h.unit)).join("");
+
+  const smCards = Object.keys(report.criteria).map((key) => {
+    const crit = report.criteria[key];
+    const sorted = sortedEntries(crit);
+    const maxAbs = Math.max(...sorted.map((e) => e.v));
+    const rows = sorted.map((e, i) => {
+      const pct = Math.round((e.v / maxAbs) * 100);
+      const vinfo = report.vendors[e.k];
+      return '<div class="smrow' + (i === 0 ? " best" : "") + '">' +
+        '<div class="swname">' + esc(vinfo.name) + '</div>' +
+        '<div class="smtrack"><div class="smbar" style="width:' + pct + '%;background:var(' + vinfo.colorVar + ')"></div></div>' +
+        '<div class="smval">' + fmtCriterionValue(crit.fmt, e.v) + '</div>' +
+      '</div>';
+    }).join("");
+    const bestName = report.vendors[sorted[0].k].name;
+    return '<div class="smcard">' +
+      '<div class="smtitle">' + esc(crit.title) + '</div>' +
+      '<div class="smunit">' + esc(crit.unit) + '</div>' +
+      rows +
+      '<span class="smtag">✓ ' + esc(bestName) + (crit.higherBetter ? " cao nhất" : " rẻ nhất") + '</span>' +
+    '</div>';
+  }).join("");
+
+  const tableRows = report.table.rows.map((r) =>
+    '<tr><td class="metric">' + esc(r.label) + '</td>' +
+    '<td' + (r.hl || r.hlCmc ? ' class="hl"' : '') + '>' + esc(r.cmc) + '</td>' +
+    '<td' + (r.hl ? ' class="hl"' : '') + '>' + esc(r.fpt) + '</td>' +
+    '<td' + (r.hl ? ' class="hl"' : '') + (r.verifyVtt ? ' class="verify"' : '') + '>' + esc(r.vtt) + '</td></tr>'
+  ).join("");
+
+  const body = document.getElementById("page-body");
+  body.innerHTML =
+    '<div class="shell">' +
+      '<aside class="sidebar">' +
+        '<a class="backlink" data-nav="home">← Trang chủ</a>' +
+        '<div class="deptlabel">' + esc(dept.name) + '</div>' +
+        sidebarItems +
+      '</aside>' +
+      '<main class="main">' +
+        '<section class="app-section"><div class="alertbox"><div>⚠️</div><div><strong>' + esc(report.alert.title) + '</strong> ' + esc(report.alert.detail) + '</div></div></section>' +
+        '<section class="app-section"><div class="sectiontitle"><span class="idx">1</span> Chỉ tiêu tổng quan</div><div class="kpirow">' + kpis + '</div></section>' +
+        '<section class="app-section">' +
+          '<div class="sectiontitle"><span class="idx">2</span> Tổng quan theo tiêu chí</div>' +
+          '<div class="radarlabel">Cấu hình phần cứng — mỗi tiêu chí một biểu đồ radar riêng (3 trục = 3 NCC)</div>' +
+          '<div class="radargrid">' + radarCards + '</div>' +
+          '<div class="radarlabel">Chỉ số vận hành &amp; chi phí — chọn nhanh theo từng tiêu chí</div>' +
+          '<div class="smgrid">' + smCards + '</div>' +
+        '</section>' +
+        '<section class="app-section">' +
+          '<div class="sectiontitle"><span class="idx">3</span> Bảng so sánh chi tiết</div>' +
+          '<div class="refnote">🖥️ <span><b>CPU, RAM, SSD giống nhau ở cả 3 NCC</b> — xem biểu đồ radar ở trên — nên bảng dưới đây tập trung vào các chỉ tiêu có khác biệt.</span></div>' +
+          '<table class="cmp"><thead><tr><th>Chỉ tiêu</th>' +
+            '<th><div class="vendorhead"><span class="swatch" style="background:var(--series-1)"></span>CMC</div></th>' +
+            '<th><div class="vendorhead"><span class="swatch" style="background:var(--series-2)"></span>FPT IS</div></th>' +
+            '<th><div class="vendorhead"><span class="swatch" style="background:var(--series-3)"></span>Viettel IDC</div></th>' +
+          '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
+          '<div style="font-size:12px;color:var(--text-muted);padding:10px 4px 0">' + esc(report.table.footnote) + '</div>' +
+        '</section>' +
+        '<div class="app-footer">' + esc(report.footer) + '</div>' +
+      '</main>' +
+    '</div>';
+
+  body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
+}
+
+function renderRoute() {
+  const hash = location.hash || "#home";
+  document.getElementById("hero-updated").textContent = session.data.updatedAt + " · " + (currentDeptName() || "Toàn tập đoàn");
+  if (hash.startsWith("#dept/")) {
+    renderDept(hash.slice(6), session.data);
+  } else {
+    renderHome(session.data);
+  }
+}
+
+function currentDeptName() {
+  const hash = location.hash || "#home";
+  if (!hash.startsWith("#dept/")) return null;
+  const routeId = hash.slice(6);
+  const dept = session.data.departments.find((d) => d.route === routeId);
+  return dept ? dept.name : null;
+}
+
+function showApp() {
+  document.getElementById("login-card").classList.add("hidden");
+  document.getElementById("change-pw-card").classList.add("hidden");
+  document.getElementById("app-shell").classList.remove("hidden");
+  document.body.classList.add("wide");
+  document.getElementById("um-person").textContent = (session.person || "").toUpperCase();
+  if (!location.hash) location.hash = "#home";
+  renderRoute();
+}
+
+window.addEventListener("hashchange", () => { if (session) renderRoute(); });
+
 document.getElementById("btn-unlock").addEventListener("click", async () => {
   const person = document.getElementById("login-person").value;
   const password = document.getElementById("login-password").value;
@@ -229,20 +596,12 @@ document.getElementById("btn-unlock").addEventListener("click", async () => {
     const dekBytes = await unwrapDek(auth, person, password);
     const { aesKey, hmacKey } = await importDekKeys(dekBytes);
     const plaintext = await decryptContent(aesKey, encContent);
+    const data = JSON.parse(plaintext);
 
-    session = { person, dekBytes, aesKey, hmacKey, auth };
-
-    document.getElementById("dashboard-who").textContent = "Đăng nhập: " + person.toUpperCase();
-    let displayText = plaintext;
-    try {
-      const parsed = JSON.parse(plaintext);
-      displayText = JSON.stringify(parsed, null, 2);
-    } catch (e) { /* not json, show as-is */ }
-    document.getElementById("dashboard-content").textContent = displayText;
-
-    document.getElementById("login-card").classList.add("hidden");
-    document.getElementById("dashboard-card").classList.remove("hidden");
+    session = { person, dekBytes, aesKey, hmacKey, auth, data };
     setMsg(msgEl, "", "");
+    document.getElementById("login-password").value = "";
+    showApp();
   } catch (err) {
     console.error(err);
     setMsg(msgEl, "Sai mật khẩu hoặc không tải được dữ liệu. Vui lòng thử lại.", "error");
@@ -251,20 +610,23 @@ document.getElementById("btn-unlock").addEventListener("click", async () => {
 
 document.getElementById("btn-logout").addEventListener("click", () => {
   session = null;
-  document.getElementById("login-password").value = "";
-  document.getElementById("dashboard-card").classList.add("hidden");
+  location.hash = "";
+  document.getElementById("app-shell").classList.add("hidden");
+  document.body.classList.remove("wide");
   document.getElementById("login-card").classList.remove("hidden");
 });
 
 document.getElementById("btn-change-pw").addEventListener("click", () => {
-  document.getElementById("dashboard-card").classList.add("hidden");
+  document.getElementById("app-shell").classList.add("hidden");
+  document.body.classList.remove("wide");
   document.getElementById("change-pw-card").classList.remove("hidden");
   setMsg(document.getElementById("change-pw-msg"), "", "");
 });
 
 document.getElementById("btn-cancel-change").addEventListener("click", () => {
   document.getElementById("change-pw-card").classList.add("hidden");
-  document.getElementById("dashboard-card").classList.remove("hidden");
+  document.getElementById("app-shell").classList.remove("hidden");
+  document.body.classList.add("wide");
   document.getElementById("new-password-1").value = "";
   document.getElementById("new-password-2").value = "";
 });
@@ -321,6 +683,12 @@ document.getElementById("btn-submit-change").addEventListener("click", async () 
     setMsg(msgEl, "Đổi mật khẩu thất bại: " + err.message, "error");
   }
 });
+
+/* Test hook: lets the build be visually verified without going through the real crypto/network flow. Harmless no-op unless called explicitly. */
+window.__debugRenderApp = function(data, person) {
+  session = { person: person || "chairman", data };
+  showApp();
+};
 </script>
 </body>
 </html>
