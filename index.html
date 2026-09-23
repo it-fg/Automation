@@ -106,6 +106,16 @@
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #1baf7a; }
   .crumb { font-size: 12.5px; color: var(--text-muted); margin-top: 14px; }
   .crumb a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
+
+  .quicknav { display: flex; gap: 10px; margin-top: 16px; }
+  .navicon-btn {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+    color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border-lt);
+    border-radius: 20px; padding: 6px 14px; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform .15s ease, box-shadow .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .navicon-btn span { font-size: 13px; line-height: 1; }
+  .navicon-btn:hover { transform: translateY(-2px); box-shadow: 0 3px 6px rgba(20,18,14,.08), 0 10px 20px rgba(20,18,14,.14); color: var(--brand-red-ink); border-color: rgba(200,0,31,.25); }
   .pagehead h1 { font-size: 20px; margin: 6px 0 2px; font-weight: 700; color: var(--text-primary); }
   .pagehead .subtitle { color: var(--text-secondary); font-size: 13.5px; }
   .home-h1 { font-size: 22px; margin: 18px 0 3px; font-weight: 700; color: var(--text-primary); }
@@ -140,10 +150,35 @@
 
   .corevalues-wrap { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--border-lt); }
   .corevalues { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; }
-  .cv { display: flex; align-items: center; gap: 10px; }
-  .cv .cvicon { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-1); border: 1px solid var(--border-lt); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-  .cv .cvname { font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+  .cv { display: flex; align-items: center; gap: 10px; position: relative; cursor: default; }
+  .cv .cvicon { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-1); border: 1px solid var(--border-lt); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; transition: transform .18s ease, box-shadow .18s ease; }
+  .cv .cvname { font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; transition: color .18s ease; }
+  .cv:hover .cvicon { transform: scale(1.14); box-shadow: 0 0 0 5px rgba(200,0,31,.09); }
+  .cv:hover .cvname { color: var(--brand-red-ink); }
   .footnote-center { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 22px; }
+
+  .cvtooltip {
+    position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%) translateY(6px);
+    width: 280px; background: #fff; border: 1px solid var(--border-lt); border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(20,18,14,.20); padding: 14px 16px; text-align: left;
+    opacity: 0; visibility: hidden; pointer-events: none; z-index: 30;
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+  }
+  .cvtooltip::after {
+    content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 7px solid transparent; border-top-color: #fff;
+  }
+  .cv:hover .cvtooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .cv.cv-left .cvtooltip { left: 0; transform: translateX(0) translateY(6px); }
+  .cv.cv-left:hover .cvtooltip { transform: translateX(0) translateY(0); }
+  .cv.cv-left .cvtooltip::after { left: 20px; transform: translateX(0); }
+  .cv.cv-right .cvtooltip { left: auto; right: 0; transform: translateX(0) translateY(6px); }
+  .cv.cv-right:hover .cvtooltip { transform: translateX(0) translateY(0); }
+  .cv.cv-right .cvtooltip::after { left: auto; right: 20px; transform: translateX(0); }
+  .cvtt-title { font-size: 12px; font-weight: 800; color: var(--brand-red-ink); margin-bottom: 8px; letter-spacing: .3px; text-transform: uppercase; }
+  .cvtooltip ul { margin: 0; padding-left: 16px; }
+  .cvtooltip li { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 5px; }
+  .cvtooltip li:last-child { margin-bottom: 0; }
 
   /* Dept shell: sidebar + main */
   .shell { display: flex; align-items: flex-start; gap: 28px; margin-top: 20px; }
@@ -175,20 +210,24 @@
   .kpi .value.red { color: var(--brand-red-ink); }
 
   .smgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .smcard { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 16px 12px; box-shadow: var(--shadow); }
+  .smcard { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 16px 12px; box-shadow: var(--shadow); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .smcard:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(20,18,14,.10), 0 16px 32px rgba(20,18,14,.16); border-color: rgba(200,0,31,.2); }
   .smcard .smtitle { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
   .smcard .smunit { font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px; }
-  .smrow { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .smrow { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; border-radius: 6px; padding: 2px 3px; margin-left: -3px; margin-right: -3px; transition: background .15s ease, transform .15s ease; }
+  .smrow:hover { background: var(--surface-2); transform: translateX(2px); }
   .smrow .swname { font-size: 10.5px; color: var(--text-secondary); width: 46px; flex-shrink: 0; }
   .smrow .smtrack { flex: 1; background: var(--surface-2); border-radius: 4px; height: 14px; position: relative; overflow: hidden; }
-  .smrow .smbar { height: 100%; border-radius: 4px; }
+  .smrow .smbar { height: 100%; border-radius: 4px; transition: width .5s cubic-bezier(.22,.9,.3,1.2), filter .15s ease; }
+  .smrow:hover .smbar { filter: brightness(1.12) saturate(1.1); }
   .smrow .smval { font-size: 10px; font-weight: 700; width: 54px; text-align: right; flex-shrink: 0; color: var(--text-primary); }
   .smrow.best .swname { font-weight: 700; color: var(--text-primary); }
   .smtag { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; color: var(--good-ink); background: var(--good-bg); padding: 1px 6px; border-radius: 20px; margin-top: 8px; }
 
   .radarlabel { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin: 18px 0 10px; }
   .radargrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .radarmini { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 14px 12px; box-shadow: var(--shadow); text-align: center; }
+  .radarmini { background: var(--surface-1); border: 1.5px solid var(--border-lt); border-radius: 12px; padding: 14px 14px 12px; box-shadow: var(--shadow); text-align: center; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .radarmini:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 4px 10px rgba(20,18,14,.10), 0 18px 36px rgba(20,18,14,.18); border-color: rgba(184,134,11,.35); }
   .radarmini .rm-title { font-size: 12.5px; font-weight: 700; color: var(--text-primary); }
   .radarmini .rm-unit { font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; }
   .radar-svg { width: 100%; max-width: 200px; height: auto; }
@@ -196,12 +235,18 @@
   .raxis { stroke: var(--border-lt); stroke-width: 1; }
   .rlabel { font-size: 12px; fill: var(--text-secondary); font-weight: 700; }
   .rm-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--good-ink); background: var(--good-bg); padding: 2px 9px; border-radius: 20px; margin-top: 6px; }
+  .radar-svg .rpoly, .radar-svg .rpt { transition: all .25s ease; transform-box: fill-box; transform-origin: center; }
+  .radarmini:hover .radar-svg .rpoly { stroke-width: 3; filter: drop-shadow(0 0 5px rgba(184,134,11,.5)); }
+  .radarmini:hover .radar-svg .rpt { r: 6; }
 
   table.cmp { width: 100%; border-collapse: collapse; background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); font-size: 13px; }
   table.cmp th, table.cmp td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border-lt); }
   table.cmp th { background: var(--surface-2); font-weight: 600; color: var(--text-secondary); font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
   table.cmp td.metric { color: var(--text-secondary); white-space: nowrap; }
   table.cmp tr:last-child td { border-bottom: none; }
+  table.cmp tbody tr { transition: background .15s ease; }
+  table.cmp tbody tr:hover { background: var(--surface-2); }
+  table.cmp tbody tr:hover td.metric { color: var(--text-primary); font-weight: 600; }
   table.cmp td.hl { font-weight: 700; color: var(--brand-red-ink); }
   table.cmp td { color: var(--text-primary); }
   .vendorhead { display: flex; align-items: center; gap: 8px; }
@@ -384,6 +429,36 @@ function checkPasswordStrength(pw) {
 
 /* ============== App rendering (post-login, driven entirely by decrypted `data`) ============== */
 
+const CORE_VALUES = [
+  { icon: "🤝", name: "Thành tâm", items: [
+    "Chân thành, thiện chí và tôn trọng đồng nghiệp, đối tác, khách hàng",
+    "Tâm huyết và trách nhiệm trong mọi hoạt động",
+    "Tận tâm mang đến những giá trị tốt đẹp cho cộng đồng"
+  ] },
+  { icon: "🏆", name: "Khát khao chiến thắng", items: [
+    "Luôn suy nghĩ tích cực, không ngừng tìm giải pháp để hoàn thành xuất sắc mục tiêu",
+    "Luôn có hoài bão cháy bỏng, sẵn sàng đương đầu với thử thách để giành chiến thắng",
+    "Bắt đầu công việc với cam kết thành công",
+    "Quyết tâm là người giỏi nhất trong việc quan trọng nhất"
+  ] },
+  { icon: "🎯", name: "Thực thi hoàn hảo", items: [
+    "Xác định rõ, hiểu rõ mục tiêu và đeo bám mục tiêu",
+    "Đoàn kết, quyết liệt, vượt qua mọi trở ngại để hoàn thành xuất sắc mục tiêu",
+    "Lập kế hoạch và thực thi kế hoạch hoàn hảo"
+  ] },
+  { icon: "🔄", name: "Cải tiến liên tục", items: [
+    "Luôn thách thức những thông lệ và luôn trăn trở với các giải pháp tối ưu hơn",
+    "Luôn sẵn sàng đổi mới để tốt hơn",
+    "Luôn tự hoàn thiện mỗi ngày theo hướng chuyên nghiệp, sáng tạo, hiệu quả và hướng tới kết quả của ngày hôm nay luôn tốt hơn ngày hôm qua"
+  ] },
+  { icon: "🛡️", name: "Tuân thủ", items: [
+    "Luôn tuân thủ các quy định của luật pháp",
+    "Luôn tuân thủ quy chế, quy định, quy trình của công ty",
+    "Luôn tuân thủ lãnh đạo (có phản biện), đề cao trách nhiệm cá nhân, không lẩn tránh, đùn đẩy trách nhiệm",
+    "Có trách nhiệm giữ gìn, bảo vệ uy tín, thương hiệu, hình ảnh, tài sản của Tập đoàn"
+  ] }
+];
+
 function fmtCriterionValue(fmt, v) {
   if (fmt === "trieu") return (v / 1000000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tr ₫";
   if (fmt === "mbps") return v + " Mbps";
@@ -429,19 +504,25 @@ function renderHome(data) {
     '<div class="greet">Xin chào, <b>' + esc((session.person || "").toUpperCase()) + '</b> — dưới đây là các báo cáo hiện có.</div>' +
     '<div class="grid">' + tiles + '</div>' +
     '<div class="corevalues-wrap">' +
-      '<div class="corevalues">' +
-        '<div class="cv"><div class="cvicon">🤝</div><div class="cvname">Thành tâm</div></div>' +
-        '<div class="cv"><div class="cvicon">🏆</div><div class="cvname">Khát khao chiến thắng</div></div>' +
-        '<div class="cv"><div class="cvicon">🎯</div><div class="cvname">Thực thi hoàn hảo</div></div>' +
-        '<div class="cv"><div class="cvicon">🔄</div><div class="cvname">Cải tiến liên tục</div></div>' +
-        '<div class="cv"><div class="cvicon">🛡️</div><div class="cvname">Tuân thủ</div></div>' +
-      '</div>' +
+      '<div class="corevalues">' + renderCoreValues() + '</div>' +
       '<div class="footnote-center">Đăng nhập một lần cho toàn bộ cổng báo cáo — mỗi phòng ban sẽ có báo cáo riêng khi sẵn sàng.</div>' +
     '</div>';
 
   body.querySelectorAll(".tile.active").forEach((el) => {
     el.addEventListener("click", () => { location.hash = "#dept/" + el.dataset.route; });
   });
+}
+
+function renderCoreValues() {
+  return CORE_VALUES.map((cv, i) => {
+    const posClass = i === 0 ? " cv-left" : (i === CORE_VALUES.length - 1 ? " cv-right" : "");
+    const bullets = cv.items.map((t) => '<li>' + esc(t) + '</li>').join("");
+    return '<div class="cv' + posClass + '">' +
+      '<div class="cvicon">' + cv.icon + '</div>' +
+      '<div class="cvname">' + esc(cv.name) + '</div>' +
+      '<div class="cvtooltip"><div class="cvtt-title">' + esc(cv.name) + '</div><ul>' + bullets + '</ul></div>' +
+    '</div>';
+  }).join("");
 }
 
 function renderRadarMini(title, unitText) {
@@ -454,10 +535,10 @@ function renderRadarMini(title, unitText) {
       '<line class="raxis" x1="140" y1="100" x2="140" y2="22"></line>' +
       '<line class="raxis" x1="140" y1="100" x2="207.5" y2="139"></line>' +
       '<line class="raxis" x1="140" y1="100" x2="72.5" y2="139"></line>' +
-      '<polygon points="140,22 207.5,139 72.5,139" fill="rgba(184,134,11,.14)" stroke="var(--brand-gold)" stroke-width="2" stroke-linejoin="round"></polygon>' +
-      '<circle cx="140" cy="22" r="4.5" fill="var(--series-1)"></circle>' +
-      '<circle cx="207.5" cy="139" r="4.5" fill="var(--series-2)"></circle>' +
-      '<circle cx="72.5" cy="139" r="4.5" fill="var(--series-3)"></circle>' +
+      '<polygon class="rpoly" points="140,22 207.5,139 72.5,139" fill="rgba(184,134,11,.14)" stroke="var(--brand-gold)" stroke-width="2" stroke-linejoin="round"></polygon>' +
+      '<circle class="rpt" cx="140" cy="22" r="4.5" fill="var(--series-1)"></circle>' +
+      '<circle class="rpt" cx="207.5" cy="139" r="4.5" fill="var(--series-2)"></circle>' +
+      '<circle class="rpt" cx="72.5" cy="139" r="4.5" fill="var(--series-3)"></circle>' +
       '<text class="rlabel" x="140" y="12" text-anchor="middle">CMC</text>' +
       '<text class="rlabel" x="216" y="145" text-anchor="start">FPT IS</text>' +
       '<text class="rlabel" x="64" y="145" text-anchor="end">Viettel IDC</text>' +
@@ -473,10 +554,16 @@ function renderDept(routeId, data) {
 
   const head = document.getElementById("page-head");
   head.innerHTML =
+    '<div class="quicknav">' +
+      '<button class="navicon-btn" id="btn-go-home"><span>🏠</span> Trang chủ</button>' +
+      '<button class="navicon-btn" id="btn-go-back"><span>←</span> Quay lại</button>' +
+    '</div>' +
     '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
     '<h1>' + esc(report.title) + '</h1>' +
     '<div class="subtitle">' + esc(report.subtitle) + '</div>';
   head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
+  document.getElementById("btn-go-home").addEventListener("click", () => { location.hash = "#home"; });
+  document.getElementById("btn-go-back").addEventListener("click", () => { location.hash = window.__prevHash || "#home"; });
 
   const sidebarItems = report.sidebar.map((s) =>
     '<div class="navitem' + (s.active ? ' active' : ' soon') + '"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + (s.active ? '' : ' <span class="soontag">Sắp ra mắt</span>') + '</div>'
@@ -552,8 +639,11 @@ function renderDept(routeId, data) {
   body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
 }
 
+let __curHash = null;
 function renderRoute() {
   const hash = location.hash || "#home";
+  window.__prevHash = (__curHash && __curHash !== hash) ? __curHash : "#home";
+  __curHash = hash;
   document.getElementById("hero-updated").textContent = session.data.updatedAt + " · " + (currentDeptName() || "Toàn tập đoàn");
   if (hash.startsWith("#dept/")) {
     renderDept(hash.slice(6), session.data);
