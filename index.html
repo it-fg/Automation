@@ -5,16 +5,322 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FG H.O — Automation Dashboard</title>
 <style>
-  body { font-family: -apple-system, Roboto, sans-serif; background:#16130f; color:#f5f4f1;
-    display:flex; align-items:center; justify-content:center; height:100vh; margin:0; text-align:center; }
-  h1 { font-size: 20px; font-weight: 600; }
-  p { color:#c3c2b7; font-size: 14px; }
+  :root {
+    --bg: #16130f;
+    --panel: #211d17;
+    --text: #f5f4f1;
+    --muted: #c3c2b7;
+    --brand-red: #e2231a;
+    --brand-red-hover: #c91d15;
+    --brand-gold: #ebc100;
+    --border: #38332a;
+    --error: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
+  select, input[type="password"], input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0f0d0a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  button {
+    width: 100%;
+    padding: 11px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--brand-red);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: var(--brand-red-hover); }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .msg { font-size: 13px; margin-top: 12px; line-height: 1.5; }
+  .msg.error { color: var(--error); }
+  .msg.success { color: #4caf7d; }
+  .msg.hint { color: var(--brand-gold); }
+  .hidden { display: none !important; }
+  .content-box {
+    white-space: pre-wrap;
+    background: #0f0d0a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    margin-top: 16px;
+    max-height: 320px;
+    overflow: auto;
+  }
+  .row { display: flex; gap: 10px; margin-top: 20px; }
+  .row button { margin-top: 0; }
+  .footer-note { color: var(--muted); font-size: 11px; margin-top: 20px; line-height: 1.5; }
 </style>
 </head>
 <body>
-  <div>
-    <h1>FG H.O — Automation Dashboard</h1>
-    <p>Placeholder khởi tạo — nội dung thật sẽ được publish sau khi hoàn tất thiết lập bảo mật.</p>
+
+<div class="card" id="login-card">
+  <h1>FG H.O — Automation Dashboard</h1>
+  <p class="subtitle">Nội dung được mã hoá — vui lòng đăng nhập để xem.</p>
+
+  <label for="login-person">Vai trò</label>
+  <select id="login-person">
+    <option value="chairman">Chairman</option>
+    <option value="ceo">CEO</option>
+    <option value="cfo">CFO</option>
+  </select>
+
+  <label for="login-password">Mật khẩu</label>
+  <input type="password" id="login-password" autocomplete="current-password">
+
+  <button id="btn-unlock">Mở khoá</button>
+  <div id="login-msg" class="msg"></div>
+
+  <p class="footer-note">Đây là lớp bảo vệ phía trình duyệt cho dữ liệu nội bộ FG H.O. Không chia sẻ mật khẩu này với người ngoài đơn vị.</p>
+</div>
+
+<div class="card hidden" id="dashboard-card">
+  <h1>Nội dung Dashboard</h1>
+  <p class="subtitle" id="dashboard-who"></p>
+  <div class="content-box" id="dashboard-content"></div>
+
+  <div class="row">
+    <button class="secondary" id="btn-change-pw">Đổi mật khẩu</button>
+    <button class="secondary" id="btn-logout">Đăng xuất</button>
   </div>
+</div>
+
+<div class="card hidden" id="change-pw-card">
+  <h1>Đổi mật khẩu</h1>
+  <p class="subtitle">Mật khẩu mới tối thiểu 12 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+
+  <label for="new-password-1">Mật khẩu mới</label>
+  <input type="password" id="new-password-1" autocomplete="new-password">
+
+  <label for="new-password-2">Nhập lại mật khẩu mới</label>
+  <input type="password" id="new-password-2" autocomplete="new-password">
+
+  <button id="btn-submit-change">Xác nhận đổi</button>
+  <div class="row">
+    <button class="secondary" id="btn-cancel-change">Huỷ</button>
+  </div>
+  <div id="change-pw-msg" class="msg"></div>
+</div>
+
+<script>
+const WORKER_BASE = "https://fg-dashboard-auth.cntt-fg.workers.dev";
+const PBKDF2_ITERATIONS_FALLBACK = 600000;
+
+let session = null; // { person, dekBytes, dekCryptoKey }
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+function bytesToB64(bytes) {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+function bytesToHex(bytes) {
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function utf8(str) { return new TextEncoder().encode(str); }
+
+async function fetchJson(path) {
+  const res = await fetch(path, { cache: "no-store" });
+  if (!res.ok) throw new Error("Khong tai duoc " + path + " (HTTP " + res.status + ")");
+  return res.json();
+}
+
+async function deriveKek(password, saltBytes, iterations, usages) {
+  const baseKey = await crypto.subtle.importKey("raw", utf8(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: saltBytes, iterations, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    usages
+  );
+}
+
+async function unwrapDek(auth, person, password) {
+  const rec = auth.users[person];
+  if (!rec) throw new Error("Khong tim thay tai khoan");
+  const salt = b64ToBytes(rec.salt);
+  const iv = b64ToBytes(rec.iv);
+  const wrapped = b64ToBytes(rec.wrappedDek);
+  const kek = await deriveKek(password, salt, auth.pbkdf2Iterations || PBKDF2_ITERATIONS_FALLBACK, ["decrypt"]);
+  const dekBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, kek, wrapped);
+  return new Uint8Array(dekBuf);
+}
+
+async function importDekKeys(dekBytes) {
+  const aesKey = await crypto.subtle.importKey("raw", dekBytes, { name: "AES-GCM" }, false, ["decrypt", "encrypt"]);
+  const hmacKey = await crypto.subtle.importKey("raw", dekBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return { aesKey, hmacKey };
+}
+
+async function decryptContent(dekAesKey, enc) {
+  const iv = b64ToBytes(enc.iv);
+  const ciphertext = b64ToBytes(enc.ciphertext);
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, dekAesKey, ciphertext);
+  return new TextDecoder().decode(plainBuf);
+}
+
+function setMsg(el, text, kind) {
+  el.textContent = text || "";
+  el.className = "msg" + (kind ? " " + kind : "");
+}
+
+function checkPasswordStrength(pw) {
+  if (pw.length < 12) return "Mật khẩu phải có ít nhất 12 ký tự.";
+  if (!/[A-Z]/.test(pw)) return "Mật khẩu cần ít nhất 1 chữ hoa.";
+  if (!/[a-z]/.test(pw)) return "Mật khẩu cần ít nhất 1 chữ thường.";
+  if (!/[0-9]/.test(pw)) return "Mật khẩu cần ít nhất 1 chữ số.";
+  if (!/[^A-Za-z0-9]/.test(pw)) return "Mật khẩu cần ít nhất 1 ký tự đặc biệt.";
+  return null;
+}
+
+document.getElementById("btn-unlock").addEventListener("click", async () => {
+  const person = document.getElementById("login-person").value;
+  const password = document.getElementById("login-password").value;
+  const msgEl = document.getElementById("login-msg");
+  setMsg(msgEl, "Đang mở khoá...", "hint");
+
+  try {
+    const [auth, encContent] = await Promise.all([
+      fetchJson("./auth.json"),
+      fetchJson("./dashboard-data.enc.json"),
+    ]);
+    const dekBytes = await unwrapDek(auth, person, password);
+    const { aesKey, hmacKey } = await importDekKeys(dekBytes);
+    const plaintext = await decryptContent(aesKey, encContent);
+
+    session = { person, dekBytes, aesKey, hmacKey, auth };
+
+    document.getElementById("dashboard-who").textContent = "Đăng nhập: " + person.toUpperCase();
+    let displayText = plaintext;
+    try {
+      const parsed = JSON.parse(plaintext);
+      displayText = JSON.stringify(parsed, null, 2);
+    } catch (e) { /* not json, show as-is */ }
+    document.getElementById("dashboard-content").textContent = displayText;
+
+    document.getElementById("login-card").classList.add("hidden");
+    document.getElementById("dashboard-card").classList.remove("hidden");
+    setMsg(msgEl, "", "");
+  } catch (err) {
+    console.error(err);
+    setMsg(msgEl, "Sai mật khẩu hoặc không tải được dữ liệu. Vui lòng thử lại.", "error");
+  }
+});
+
+document.getElementById("btn-logout").addEventListener("click", () => {
+  session = null;
+  document.getElementById("login-password").value = "";
+  document.getElementById("dashboard-card").classList.add("hidden");
+  document.getElementById("login-card").classList.remove("hidden");
+});
+
+document.getElementById("btn-change-pw").addEventListener("click", () => {
+  document.getElementById("dashboard-card").classList.add("hidden");
+  document.getElementById("change-pw-card").classList.remove("hidden");
+  setMsg(document.getElementById("change-pw-msg"), "", "");
+});
+
+document.getElementById("btn-cancel-change").addEventListener("click", () => {
+  document.getElementById("change-pw-card").classList.add("hidden");
+  document.getElementById("dashboard-card").classList.remove("hidden");
+  document.getElementById("new-password-1").value = "";
+  document.getElementById("new-password-2").value = "";
+});
+
+document.getElementById("btn-submit-change").addEventListener("click", async () => {
+  const msgEl = document.getElementById("change-pw-msg");
+  const pw1 = document.getElementById("new-password-1").value;
+  const pw2 = document.getElementById("new-password-2").value;
+
+  if (!session) { setMsg(msgEl, "Phiên đã hết hạn, vui lòng đăng nhập lại.", "error"); return; }
+  if (pw1 !== pw2) { setMsg(msgEl, "Hai mật khẩu nhập lại không khớp.", "error"); return; }
+  const strengthError = checkPasswordStrength(pw1);
+  if (strengthError) { setMsg(msgEl, strengthError, "error"); return; }
+
+  setMsg(msgEl, "Đang xử lý...", "hint");
+  try {
+    const nonceRes = await fetch(WORKER_BASE + "/nonce");
+    if (!nonceRes.ok) throw new Error("Khong lay duoc nonce");
+    const { token } = await nonceRes.json();
+    const nonceHex = token.split(".")[0];
+
+    const proofBuf = await crypto.subtle.sign("HMAC", session.hmacKey, utf8(nonceHex));
+    const proof = bytesToHex(proofBuf);
+
+    const newSalt = crypto.getRandomValues(new Uint8Array(16));
+    const newIv = crypto.getRandomValues(new Uint8Array(12));
+    const iterations = session.auth.pbkdf2Iterations || PBKDF2_ITERATIONS_FALLBACK;
+    const newKek = await deriveKek(pw1, newSalt, iterations, ["encrypt"]);
+    const newWrappedBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv: newIv }, newKek, session.dekBytes);
+
+    const resp = await fetch(WORKER_BASE + "/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        person: session.person,
+        token,
+        proof,
+        salt: bytesToB64(newSalt),
+        iv: bytesToB64(newIv),
+        wrappedDek: bytesToB64(new Uint8Array(newWrappedBuf)),
+      }),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(errText || ("HTTP " + resp.status));
+    }
+
+    setMsg(msgEl, "Đổi mật khẩu thành công. Có hiệu lực trong khoảng 1 phút (thời gian GitHub Pages cập nhật lại trang).", "success");
+    document.getElementById("new-password-1").value = "";
+    document.getElementById("new-password-2").value = "";
+  } catch (err) {
+    console.error(err);
+    setMsg(msgEl, "Đổi mật khẩu thất bại: " + err.message, "error");
+  }
+});
+</script>
 </body>
 </html>
