@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FG H.O — Cổng Báo cáo Điều hành</title>
+<title>F.I.T GROUP — Cổng Báo cáo Điều hành</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -60,7 +60,9 @@
     width: 100%;
     max-width: 420px;
   }
-  .card h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .card h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; line-height: 1.35; text-align: center; }
+  .card h1 .line-brand { color: #FF0000; }
+  .card h1 .line-portal { color: #EAC000; }
   .card .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
   .card label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
   .card select, .card input[type="password"], .card input[type="text"] {
@@ -92,10 +94,10 @@
   .usermenu button.linklike { background: none; border: none; padding: 0; color: var(--brand-red-ink); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; }
   .herobrand { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 2px 0 4px; }
   .herobrand .logo-col { justify-self: start; }
-  .herobrand .logo-col svg { height: 36px; width: auto; display: block; }
+  .herobrand .logo-col svg { height: 38px; width: auto; display: block; }
   .herobrand .text-col { text-align: center; }
-  .heroname { font-size: 20px; font-weight: 900; letter-spacing: .4px; color: var(--brand-red-ink); line-height: 1.15; }
-  .heromission { font-size: 11.5px; font-style: italic; color: var(--text-secondary); margin: 3px auto 0; max-width: 460px; }
+  .heroname { font-size: 34px; font-weight: 900; letter-spacing: .3px; color: #FF0000; line-height: 1.1; }
+  .heromission { font-size: 14.5px; font-style: italic; color: var(--text-secondary); margin: 6px auto 0; max-width: 560px; line-height: 1.35; }
   .updatedbadge {
     font-size: 12.5px; color: var(--text-secondary); background: var(--surface-1);
     border: 1px solid var(--border-lt); border-radius: 20px; padding: 7px 14px;
@@ -107,7 +109,8 @@
   .crumb { font-size: 12.5px; color: var(--text-muted); margin-top: 14px; }
   .crumb a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
 
-  .quicknav { display: flex; gap: 10px; margin-top: 16px; }
+  .titlerow { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .quicknav { display: flex; gap: 10px; flex-shrink: 0; }
   .navicon-btn {
     display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
     color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border-lt);
@@ -267,6 +270,17 @@
   .vcard dl dd { margin: 0; font-weight: 500; text-align: right; color: var(--text-primary); }
 
   .app-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border-lt); font-size: 11.5px; color: var(--text-muted); }
+
+  .scrolltop-btn {
+    position: fixed; right: 26px; bottom: 26px; width: 46px; height: 46px; border-radius: 50%;
+    background: var(--brand-red); color: #fff; border: none; font-size: 30px; font-weight: 900;
+    cursor: pointer; box-shadow: 0 4px 10px rgba(20,18,14,.14), 0 10px 24px rgba(20,18,14,.18);
+    display: flex; align-items: center; justify-content: center; z-index: 40; line-height: 1;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .scrolltop-btn.hidden { display: none; }
+  .scrolltop-btn:hover { transform: translateY(-4px) scale(1.06); background: var(--brand-red-hover); box-shadow: 0 6px 14px rgba(20,18,14,.18), 0 16px 32px rgba(20,18,14,.22); }
+  .scrolltop-btn:active { transform: translateY(-1px) scale(.98); }
   @media (max-width: 980px) { .shell { flex-direction: column; } .sidebar { width: 100%; position: static; } }
   @media (max-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } .kpirow, .smgrid { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -274,8 +288,8 @@
 <body>
 
 <div class="card" id="login-card">
-  <h1>FG H.O — Cổng Báo cáo Điều hành</h1>
-  <p class="subtitle">Nội dung được mã hoá — vui lòng đăng nhập để xem.</p>
+  <h1><span class="line-brand">F.I.T GROUP</span><br><span class="line-portal">CỔNG BÁO CÁO ĐIỀU HÀNH</span></h1>
+  <p class="subtitle">Nội dung được mã hóa, vui lòng đăng nhập để xem:</p>
 
   <label for="login-person">Vai trò</label>
   <select id="login-person">
@@ -290,7 +304,7 @@
   <button id="btn-unlock">Mở khoá</button>
   <div id="login-msg" class="msg"></div>
 
-  <p class="footer-note">Đây là lớp bảo vệ phía trình duyệt cho dữ liệu nội bộ FG H.O. Không chia sẻ mật khẩu này với người ngoài đơn vị.</p>
+  <p class="footer-note">Trình duyệt dữ liệu nội bộ F.I.T GROUP được bảo vệ. Không chia sẻ mật khẩu này với bất kỳ ai !</p>
 </div>
 
 <div class="card hidden" id="change-pw-card">
@@ -347,6 +361,12 @@
   </header>
 
   <div class="app-wrap" id="page-body"></div>
+
+  <button class="scrolltop-btn hidden" id="btn-scroll-top" title="Lên đầu trang">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 19V5M5 11L12 4L19 11" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
 </div>
 
 <script>
@@ -554,12 +574,14 @@ function renderDept(routeId, data) {
 
   const head = document.getElementById("page-head");
   head.innerHTML =
-    '<div class="quicknav">' +
-      '<button class="navicon-btn" id="btn-go-home"><span>🏠</span> Trang chủ</button>' +
-      '<button class="navicon-btn" id="btn-go-back"><span>←</span> Quay lại</button>' +
-    '</div>' +
     '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
-    '<h1>' + esc(report.title) + '</h1>' +
+    '<div class="titlerow">' +
+      '<h1>' + esc(report.title) + '</h1>' +
+      '<div class="quicknav">' +
+        '<button class="navicon-btn" id="btn-go-home"><span>🏠</span> Trang chủ</button>' +
+        '<button class="navicon-btn" id="btn-go-back"><span>←</span> Quay lại</button>' +
+      '</div>' +
+    '</div>' +
     '<div class="subtitle">' + esc(report.subtitle) + '</div>';
   head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
   document.getElementById("btn-go-home").addEventListener("click", () => { location.hash = "#home"; });
@@ -650,6 +672,9 @@ function renderRoute() {
   } else {
     renderHome(session.data);
   }
+  window.scrollTo(0, 0);
+  const scrollBtn = document.getElementById("btn-scroll-top");
+  if (scrollBtn) scrollBtn.classList.toggle("hidden", !hash.startsWith("#dept/"));
 }
 
 function currentDeptName() {
@@ -671,6 +696,14 @@ function showApp() {
 }
 
 window.addEventListener("hashchange", () => { if (session) renderRoute(); });
+
+document.getElementById("btn-scroll-top").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+document.getElementById("login-password").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btn-unlock").click(); }
+});
 
 document.getElementById("btn-unlock").addEventListener("click", async () => {
   const person = document.getElementById("login-person").value;
