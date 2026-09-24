@@ -368,6 +368,17 @@
 
 <script>
 const WORKER_BASE = "https://fg-dashboard-auth.cntt-fg.workers.dev";
+
+async function logLoginEvent(person, event) {
+  // Audit logging is best-effort only: never block or fail the login flow on a network error.
+  try {
+    await fetch(WORKER_BASE + "/log-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ person, event }),
+    });
+  } catch (e) { /* ignore */ }
+}
 const PBKDF2_ITERATIONS_FALLBACK = 600000;
 
 let session = null; // { person, dekBytes, aesKey, hmacKey, auth, data }
@@ -736,10 +747,12 @@ document.getElementById("btn-unlock").addEventListener("click", async () => {
     session = { person, dekBytes, aesKey, hmacKey, auth, data };
     setMsg(msgEl, "", "");
     document.getElementById("login-password").value = "";
+    logLoginEvent(person, "login_success");
     showApp();
   } catch (err) {
     console.error(err);
     setMsg(msgEl, "Sai mật khẩu hoặc không tải được dữ liệu. Vui lòng thử lại.", "error");
+    logLoginEvent(person, "login_failed");
   }
 });
 
