@@ -3,6 +3,7 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
     const ALLOWED_ORIGIN = "https://report.fitgroup.com.vn";
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 
     const corsHeaders = {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -15,14 +16,28 @@ export default {
     // /audit-log is called server-to-server (e.g. from it-pc01), not from the browser,
     // so it has no matching Origin header - it is protected by its own secret key instead.
     if (url.pathname === "/audit-log" && request.method === "GET") {
+      const allowed = await checkRateLimit(env, env.RATE_LIMITER_10, `auditlog:${ip}`);
+      if (!allowed) return new Response("Too many requests", { status: 429, headers: corsHeaders });
       return handleAuditLog(request, env, corsHeaders);
     }
 
     if (origin !== ALLOWED_ORIGIN) return new Response("Forbidden", { status: 403, headers: corsHeaders });
 
-    if (url.pathname === "/nonce" && request.method === "GET") return handleNonce(env, corsHeaders);
-    if (url.pathname === "/change-password" && request.method === "POST") return handleChangePassword(request, env, corsHeaders);
-    if (url.pathname === "/log-login" && request.method === "POST") return handleLogLogin(request, env, corsHeaders);
+    if (url.pathname === "/nonce" && request.method === "GET") {
+      const allowed = await checkRateLimit(env, env.RATE_LIMITER_20, `nonce:${ip}`);
+      if (!allowed) return new Response("Too many requests", { status: 429, headers: corsHeaders });
+      return handleNonce(env, corsHeaders);
+    }
+    if (url.pathname === "/change-password" && request.method === "POST") {
+      const allowed = await checkRateLimit(env, env.RATE_LIMITER_10, `changepw:${ip}`);
+      if (!allowed) return new Response("Too many requests", { status: 429, headers: corsHeaders });
+      return handleChangePassword(request, env, corsHeaders);
+    }
+    if (url.pathname === "/log-login" && request.method === "POST") {
+      const allowed = await checkRateLimit(env, env.RATE_LIMITER_20, `loglogin:${ip}`);
+      if (!allowed) return new Response("Too many requests", { status: 429, headers: corsHeaders });
+      return handleLogLogin(request, env, corsHeaders);
+    }
 
     return new Response("Not found", { status: 404, headers: corsHeaders });
   },
@@ -48,6 +63,20 @@ async function hmacSha256(keyBytes, msgBytes) {
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, msgBytes);
   return new Uint8Array(sig);
+}
+
+// Rate-limit check using Cloudflare's native Rate Limiting binding (no KV writes involved,
+// so it does not eat into the Workers KV free-tier write quota). Fails OPEN (allows the
+// request) if the binding isn't configured yet, or if the rate-limiter API itself errors -
+// a rate-limiting outage must never take the real dashboard down.
+async function checkRateLimit(env, limiter, key) {
+  if (!limiter) return true;
+  try {
+    const { success } = await limiter.limit({ key });
+    return success;
+  } catch (e) {
+    return true;
+  }
 }
 
 // Best-effort audit log write. Never throws - a logging failure must not break login/password-change.
