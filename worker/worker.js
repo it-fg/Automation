@@ -44,7 +44,7 @@ export default {
 };
 
 const NONCE_TTL_MS = 5 * 60 * 1000;
-const VALID_PERSONS = ["chairman", "ceo", "cfo"];
+const VALID_PERSONS = ["chairman", "ceo", "cfo", "dgd"];
 const VALID_LOGIN_EVENTS = ["login_success", "login_failed"];
 const GITHUB_OWNER = "it-fg";
 const GITHUB_REPO = "Automation";
