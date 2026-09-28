@@ -283,6 +283,13 @@
   .scrolltop-btn.hidden { display: none; }
   .scrolltop-btn:hover { transform: translateY(-4px) scale(1.06); background: var(--brand-red-hover); box-shadow: 0 6px 14px rgba(20,18,14,.18), 0 16px 32px rgba(20,18,14,.22); }
   .scrolltop-btn:active { transform: translateY(-1px) scale(.98); }
+  .claudecredit {
+    position: fixed;
+    left: max(20px, calc((100vw - 1320px) / 2 + 20px));
+    bottom: 24px;
+    font-size: 13px; font-style: italic; color: var(--text-muted);
+    z-index: 5; pointer-events: none;
+  }
   @media (max-width: 980px) { .shell { flex-direction: column; } .sidebar { width: 100%; position: static; } }
   @media (max-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } .kpirow, .smgrid { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -507,6 +514,10 @@ function renderUpdatedBadge() {
   '</div>';
 }
 
+function renderClaudeCredit() {
+  return '<div class="claudecredit">Sản phẩm có sự hỗ trợ của Claude</div>';
+}
+
 function renderHome(data) {
   const head = document.getElementById("page-head");
   head.innerHTML =
@@ -545,7 +556,7 @@ function renderHome(data) {
     '<div class="corevalues-wrap">' +
       '<div class="corevalues">' + renderCoreValues() + '</div>' +
       '<div class="footnote-center">Đăng nhập một lần cho toàn bộ cổng báo cáo — mỗi phòng ban sẽ có báo cáo riêng khi sẵn sàng.</div>' +
-    '</div>';
+    '</div>' + renderClaudeCredit();
 
   body.querySelectorAll(".tile.active").forEach((el) => {
     el.addEventListener("click", () => { location.hash = "#dept/" + el.dataset.route; });
@@ -678,7 +689,7 @@ function renderDept(routeId, data) {
         '</section>' +
         '<div class="app-footer">' + esc(report.footer) + '</div>' +
       '</main>' +
-    '</div>';
+    '</div>' + renderClaudeCredit();
 
   body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
 }
