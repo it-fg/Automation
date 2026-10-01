@@ -153,11 +153,16 @@ async function handleChangePassword(request, env, headers) {
   let body;
   try { body = await request.json(); } catch { return new Response("Bad request", { status: 400, headers }); }
 
-  const { person, token, proof, salt, iv, wrappedDek } = body || {};
+  // Tu 01/10/2026: kien truc 2 tang khoa (Home DEK dung chung + DEK rieng tung phong ban).
+  // Client gui du: khoa Home moi + toan bo departmentKeys ma nguoi do dang nam giu (da duoc
+  // client tu re-wrap bang KEK moi truoc khi goi endpoint nay).
+  const { person, token, proof, salt, iv, wrappedHomeKey, departmentKeys } = body || {};
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 
   if (!VALID_PERSONS.includes(person)) return new Response("Invalid person", { status: 400, headers });
-  if (!token || !proof || !salt || !iv || !wrappedDek) return new Response("Missing fields", { status: 400, headers });
+  if (!token || !proof || !salt || !iv || !wrappedHomeKey || typeof departmentKeys !== "object" || departmentKeys === null) {
+    return new Response("Missing fields", { status: 400, headers });
+  }
 
   const nonceHex = await verifyToken(env, token);
   if (!nonceHex) {
@@ -165,6 +170,9 @@ async function handleChangePassword(request, env, headers) {
     return new Response("Invalid or expired token", { status: 401, headers });
   }
 
+  // env.DEK_B64 = Home DEK (dung chung cho moi nguoi hop le) - ten secret giu nguyen de khong
+  // phai doi binding tren Cloudflare, nhung tu gio gia tri cua no la Home DEK, khong phai
+  // "DEK chung cho tat ca du lieu" nhu truoc 01/10/2026.
   const dek = b64ToBytes(env.DEK_B64);
   const expectedProof = await hmacSha256(dek, new TextEncoder().encode(nonceHex));
   if (bytesToHex(expectedProof) !== proof) {
@@ -183,7 +191,7 @@ async function handleChangePassword(request, env, headers) {
   const getJson = await getResp.json();
   const currentContent = JSON.parse(atob(getJson.content.replace(/\n/g, "")));
 
-  currentContent.users[person] = { salt, iv, wrappedDek };
+  currentContent.users[person] = { salt, iv, wrappedHomeKey, departmentKeys };
 
   const putResp = await fetch(apiBase, {
     method: "PUT",

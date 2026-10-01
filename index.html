@@ -387,8 +387,26 @@ async function logLoginEvent(person, event) {
 const PBKDF2_ITERATIONS_FALLBACK = 600000;
 const SESSION_STORAGE_KEY = "fg_dashboard_session";
 const IDLE_LIMIT_MS = 1 * 60 * 60 * 1000; // 1 gio khong thao tac -> tu dang xuat
+const ACCESS_DENIED_MSG = "Anh/Chị không có quyền truy cập, vui lòng chọn Phòng/Ban khác để xem !";
 
-let session = null; // { person, dekBytes, aesKey, hmacKey, auth, data }
+/*
+ * KIEN TRUC 2 TANG KHOA (tu 01/10/2026):
+ *  - Home DEK: dung chung cho moi nguoi dang nhap hop le, giai ma khoi "home"
+ *    (danh sach 12 o Trang chu: ten/icon/mo ta/preview - khong nhay cam).
+ *  - Department DEK: rieng cho TUNG phong ban, chi nhung ai duoc cap moi co
+ *    (trong auth.json > users.<person>.departmentKeys.<deptId>). Khong co
+ *    khoa nay thi KHONG THE giai ma duoc report cua phong ban do, du co
+ *    mo DevTools Console - day la hang rao mat ma that, khong phai chi an/
+ *    chan o giao dien.
+ *
+ * session = {
+ *   person, kekBytes, homeDekBytes, auth,
+ *   homeData: { updatedAt, departments },
+ *   reportsEnc: { <route>: {iv,ciphertext}, ... },   // chua giai ma, tai ve 1 lan luc dang nhap
+ *   reportCache: { <route>: <report object da giai ma> },  // giai ma lazy, cache lai trong phien
+ * }
+ */
+let session = null;
 
 function b64ToBytes(b64) {
   const bin = atob(b64);
@@ -424,28 +442,54 @@ async function deriveKek(password, saltBytes, iterations, usages) {
   );
 }
 
-async function unwrapDek(auth, person, password) {
+async function deriveKekBytes(password, saltBytes, iterations) {
+  // Can raw bytes (khong phai CryptoKey) de import lai nhieu lan voi usages khac nhau (decrypt luc unwrap, encrypt luc doi mat khau).
+  const kdf = await crypto.subtle.importKey("raw", utf8(password), { name: "PBKDF2" }, false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: saltBytes, iterations, hash: "SHA-256" }, kdf, 256);
+  return new Uint8Array(bits);
+}
+
+async function importAesKey(bytes, usages) {
+  return crypto.subtle.importKey("raw", bytes, { name: "AES-GCM" }, false, usages);
+}
+async function importHmacKey(bytes) {
+  return crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+}
+
+async function unwrapWithKek(kekBytes, ivB64, wrappedB64) {
+  const kekKey = await importAesKey(kekBytes, ["decrypt"]);
+  const buf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(ivB64) }, kekKey, b64ToBytes(wrappedB64));
+  return new Uint8Array(buf);
+}
+async function wrapWithKek(kekBytes, plainBytes) {
+  const kekKey = await importAesKey(kekBytes, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const buf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, kekKey, plainBytes);
+  return { iv: bytesToB64(iv), wrapped: bytesToB64(new Uint8Array(buf)) };
+}
+
+async function decryptBlock(rawKeyBytes, block) {
+  const key = await importAesKey(rawKeyBytes, ["decrypt"]);
+  const iv = b64ToBytes(block.iv);
+  const ciphertext = b64ToBytes(block.ciphertext);
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return new TextDecoder().decode(plainBuf);
+}
+
+// Mo khoa Home DEK bang mat khau (dang nhap that su, can KEK tu PBKDF2).
+async function unlockWithPassword(auth, person, password) {
   const rec = auth.users[person];
   if (!rec) throw new Error("Khong tim thay tai khoan");
+  const iterations = auth.pbkdf2Iterations || PBKDF2_ITERATIONS_FALLBACK;
   const salt = b64ToBytes(rec.salt);
-  const iv = b64ToBytes(rec.iv);
-  const wrapped = b64ToBytes(rec.wrappedDek);
-  const kek = await deriveKek(password, salt, auth.pbkdf2Iterations || PBKDF2_ITERATIONS_FALLBACK, ["decrypt"]);
-  const dekBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, kek, wrapped);
-  return new Uint8Array(dekBuf);
+  const kekBytes = await deriveKekBytes(password, salt, iterations);
+  const homeDekBytes = await unwrapWithKek(kekBytes, rec.iv, rec.wrappedHomeKey);
+  return { kekBytes, homeDekBytes };
 }
 
-async function importDekKeys(dekBytes) {
-  const aesKey = await crypto.subtle.importKey("raw", dekBytes, { name: "AES-GCM" }, false, ["decrypt", "encrypt"]);
-  const hmacKey = await crypto.subtle.importKey("raw", dekBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  return { aesKey, hmacKey };
-}
-
-async function decryptContent(dekAesKey, enc) {
-  const iv = b64ToBytes(enc.iv);
-  const ciphertext = b64ToBytes(enc.ciphertext);
-  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, dekAesKey, ciphertext);
-  return new TextDecoder().decode(plainBuf);
+// Mo khoa 1 department DEK cu the (lazy, chi khi dieu huong toi phong ban do va co quyen).
+async function unwrapDeptDek(kekBytes, deptKeyRec) {
+  return unwrapWithKek(kekBytes, deptKeyRec.iv, deptKeyRec.wrappedDek);
 }
 
 function saveSessionToStorage() {
@@ -453,7 +497,7 @@ function saveSessionToStorage() {
   try {
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
       person: session.person,
-      dekB64: bytesToB64(session.dekBytes),
+      kekB64: bytesToB64(session.kekBytes),
       lastActive: Date.now(),
     }));
   } catch (e) { /* Session Storage khong dung duoc (che do an danh...) - bo qua */ }
@@ -484,32 +528,39 @@ function forceLogout(message) {
   if (message) setMsg(document.getElementById("login-msg"), message, "hint");
 }
 
+async function loadSessionCore(person, kekBytes, auth) {
+  const encContent = await fetchJson("./dashboard-data.enc.json");
+  const rec = auth.users[person];
+  const homeDekBytes = await unwrapWithKek(kekBytes, rec.iv, rec.wrappedHomeKey);
+  const homePlain = await decryptBlock(homeDekBytes, encContent.home);
+  const homeData = JSON.parse(homePlain);
+  return {
+    person, kekBytes, homeDekBytes, auth, homeData,
+    reportsEnc: encContent.reports || {},
+    reportCache: {},
+  };
+}
+
 async function tryRestoreSession() {
   let raw;
   try { raw = sessionStorage.getItem(SESSION_STORAGE_KEY); } catch (e) { return; }
   if (!raw) return;
   let saved;
   try { saved = JSON.parse(raw); } catch (e) { clearSessionStorage(); return; }
-  if (!saved || !saved.person || !saved.dekB64 || !saved.lastActive) { clearSessionStorage(); return; }
+  if (!saved || !saved.person || !saved.kekB64 || !saved.lastActive) { clearSessionStorage(); return; }
   if (Date.now() - saved.lastActive > IDLE_LIMIT_MS) {
     clearSessionStorage();
     setMsg(document.getElementById("login-msg"), "Phiên trước đã hết hạn do không thao tác, vui lòng đăng nhập lại.", "hint");
     return;
   }
   try {
-    const [auth, encContent] = await Promise.all([
-      fetchJson("./auth.json"),
-      fetchJson("./dashboard-data.enc.json"),
-    ]);
-    const dekBytes = b64ToBytes(saved.dekB64);
-    const { aesKey, hmacKey } = await importDekKeys(dekBytes);
-    const plaintext = await decryptContent(aesKey, encContent);
-    const data = JSON.parse(plaintext);
-    session = { person: saved.person, dekBytes, aesKey, hmacKey, auth, data };
+    const auth = await fetchJson("./auth.json");
+    const kekBytes = b64ToBytes(saved.kekB64);
+    session = await loadSessionCore(saved.person, kekBytes, auth);
     saveSessionToStorage();
     showApp();
   } catch (err) {
-    console.error("Khong khoi phuc duoc phien (co the DEK da bi xoay vong):", err);
+    console.error("Khong khoi phuc duoc phien (co the mat khau da bi doi):", err);
     clearSessionStorage();
     setMsg(document.getElementById("login-msg"), "Phiên trước không còn hợp lệ (có thể do IT vừa cập nhật bảo mật), vui lòng đăng nhập lại.", "hint");
   }
@@ -529,7 +580,7 @@ function checkPasswordStrength(pw) {
   return null;
 }
 
-/* ============== App rendering (post-login, driven entirely by decrypted `data`) ============== */
+/* ============== App rendering (post-login, driven by session.homeData + lazily-decrypted reports) ============== */
 
 const CORE_VALUES = [
   { icon: "🤝", name: "Thành tâm", items: [
@@ -584,7 +635,14 @@ function renderClaudeCredit() {
   return '<div class="claudecredit">Developed by CONGHEIDC | Version 2026.09.001 | Powered by Claude</div>';
 }
 
-function renderHome(data) {
+function personDepartmentKeys() {
+  const rec = session.auth.users[session.person];
+  return (rec && rec.departmentKeys) || {};
+}
+
+function renderHome() {
+  const data = session.homeData;
+  const deptKeys = personDepartmentKeys();
   const head = document.getElementById("page-head");
   head.innerHTML =
     '<h1 class="home-h1">Cổng Báo cáo Điều hành</h1>' +
@@ -595,16 +653,23 @@ function renderHome(data) {
 
   const tiles = data.departments.map((d) => {
     if (d.status === "active") {
-      const preview = (d.preview || []).map((p) =>
-        '<div class="stat"><div class="v"' + (p.color === "red" ? ' style="color:var(--brand-red-ink)"' : p.color === "amber" ? ' style="color:#c9820c"' : '') + '>' + esc(p.value) + '</div><div class="l">' + esc(p.label) + '</div></div>'
-      ).join("");
+      // Khoi "home" (ten/icon/mo ta/preview) dung chung 1 Home DEK cho moi nguoi dang nhap hop
+      // le, khong bi khoa rieng theo phong ban - nen preview (so lieu tom tat) chi duoc hien khi
+      // nguoi nay thuc su co departmentKeys[d.id] (tuc co the mo khoa bao cao chi tiet cua
+      // phong ban do). Khong co quyen thi an han preview, chi con ten/icon/mo ta.
+      const hasAccess = !!deptKeys[d.id];
+      const preview = hasAccess
+        ? '<div class="preview">' + (d.preview || []).map((p) =>
+            '<div class="stat"><div class="v"' + (p.color === "red" ? ' style="color:var(--brand-red-ink)"' : p.color === "amber" ? ' style="color:#c9820c"' : '') + '>' + esc(p.value) + '</div><div class="l">' + esc(p.label) + '</div></div>'
+          ).join("") + '</div>'
+        : '<div class="preview"><div class="stat" style="opacity:.6"><div class="l">🔒 Chưa có quyền xem chi tiết</div></div></div>';
       return '<div class="tile active" data-route="' + esc(d.route) + '">' +
         '<div class="arrow">→</div>' +
         '<div class="icon">' + d.icon + '</div>' +
         '<div class="name">' + esc(d.name) + '</div>' +
         '<div class="desc">' + esc(d.desc) + '</div>' +
-        '<span class="badge">● Đang cập nhật</span>' +
-        '<div class="preview">' + preview + '</div>' +
+        '<span class="badge"' + (hasAccess ? '' : ' style="opacity:.6"') + '>' + (hasAccess ? '● Đang cập nhật' : '🔒 Không có quyền') + '</span>' +
+        preview +
       '</div>';
     }
     return '<div class="tile soon">' +
@@ -663,10 +728,42 @@ function renderRadarMini(title, unitText) {
   '</div>';
 }
 
-function renderDept(routeId, data) {
-  const report = data.reports[routeId];
-  const dept = data.departments.find((d) => d.route === routeId);
-  if (!report || !dept) { location.hash = "#home"; return; }
+function renderAccessDenied(dept) {
+  const head = document.getElementById("page-head");
+  head.innerHTML =
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
+    '<div class="titlerow"><h1>' + esc(dept.name) + '</h1></div>';
+  head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
+
+  const body = document.getElementById("page-body");
+  body.innerHTML =
+    '<section class="app-section">' +
+      '<div class="alertbox"><div>🔒</div><div><strong>Không có quyền truy cập</strong> ' + esc(ACCESS_DENIED_MSG) + '</div></div>' +
+      '<div style="margin-top:16px"><button class="navicon-btn" id="btn-back-home-denied"><span>🏠</span> Về Trang chủ</button></div>' +
+    '</section>' + renderClaudeCredit();
+  document.getElementById("btn-back-home-denied").addEventListener("click", () => { location.hash = "#home"; });
+}
+
+async function renderDept(routeId) {
+  const dept = session.homeData.departments.find((d) => d.route === routeId);
+  if (!dept || dept.status !== "active") { location.hash = "#home"; return; }
+
+  const deptKeys = personDepartmentKeys();
+  const keyRec = deptKeys[dept.id];
+  if (!keyRec) {
+    renderAccessDenied(dept);
+    return;
+  }
+
+  let report = session.reportCache[routeId];
+  if (!report) {
+    const encBlock = session.reportsEnc[routeId];
+    if (!encBlock) { location.hash = "#home"; return; }
+    const deptDekBytes = await unwrapDeptDek(session.kekBytes, keyRec);
+    const plaintext = await decryptBlock(deptDekBytes, encBlock);
+    report = JSON.parse(plaintext);
+    session.reportCache[routeId] = report;
+  }
 
   const head = document.getElementById("page-head");
   head.innerHTML =
@@ -761,18 +858,17 @@ function renderDept(routeId, data) {
 }
 
 let __curHash = null;
-function renderRoute() {
+async function renderRoute() {
   const hash = location.hash || "#home";
   window.__prevHash = (__curHash && __curHash !== hash) ? __curHash : "#home";
   __curHash = hash;
-  const updatedText = session.data.updatedAt + " · " + (currentDeptName() || "Toàn tập đoàn");
   if (hash.startsWith("#dept/")) {
-    renderDept(hash.slice(6), session.data);
+    await renderDept(hash.slice(6));
   } else {
-    renderHome(session.data);
+    renderHome();
   }
   const heroUpdatedEl = document.getElementById("hero-updated");
-  if (heroUpdatedEl) heroUpdatedEl.textContent = updatedText;
+  if (heroUpdatedEl) heroUpdatedEl.textContent = session.homeData.updatedAt + " · " + (currentDeptName() || "Toàn tập đoàn");
   window.scrollTo(0, 0);
   const scrollBtn = document.getElementById("btn-scroll-top");
   if (scrollBtn) scrollBtn.classList.remove("hidden");
@@ -782,7 +878,7 @@ function currentDeptName() {
   const hash = location.hash || "#home";
   if (!hash.startsWith("#dept/")) return null;
   const routeId = hash.slice(6);
-  const dept = session.data.departments.find((d) => d.route === routeId);
+  const dept = session.homeData.departments.find((d) => d.route === routeId);
   return dept ? dept.name : null;
 }
 
@@ -813,16 +909,9 @@ document.getElementById("btn-unlock").addEventListener("click", async () => {
   setMsg(msgEl, "Đang mở khoá...", "hint");
 
   try {
-    const [auth, encContent] = await Promise.all([
-      fetchJson("./auth.json"),
-      fetchJson("./dashboard-data.enc.json"),
-    ]);
-    const dekBytes = await unwrapDek(auth, person, password);
-    const { aesKey, hmacKey } = await importDekKeys(dekBytes);
-    const plaintext = await decryptContent(aesKey, encContent);
-    const data = JSON.parse(plaintext);
-
-    session = { person, dekBytes, aesKey, hmacKey, auth, data };
+    const auth = await fetchJson("./auth.json");
+    const { kekBytes } = await unlockWithPassword(auth, person, password);
+    session = await loadSessionCore(person, kekBytes, auth);
     saveSessionToStorage();
     setMsg(msgEl, "", "");
     document.getElementById("login-password").value = "";
@@ -876,14 +965,26 @@ document.getElementById("btn-submit-change").addEventListener("click", async () 
     const { token } = await nonceRes.json();
     const nonceHex = token.split(".")[0];
 
-    const proofBuf = await crypto.subtle.sign("HMAC", session.hmacKey, utf8(nonceHex));
+    // Proof = HMAC(homeDek, nonce) - Home DEK dung chung cho moi nguoi hop le nen Worker
+    // co the xac minh bang dung 1 secret (xem worker.js: env.DEK_B64 = Home DEK).
+    const hmacKey = await importHmacKey(session.homeDekBytes);
+    const proofBuf = await crypto.subtle.sign("HMAC", hmacKey, utf8(nonceHex));
     const proof = bytesToHex(proofBuf);
 
-    const newSalt = crypto.getRandomValues(new Uint8Array(16));
-    const newIv = crypto.getRandomValues(new Uint8Array(12));
     const iterations = session.auth.pbkdf2Iterations || PBKDF2_ITERATIONS_FALLBACK;
-    const newKek = await deriveKek(pw1, newSalt, iterations, ["encrypt"]);
-    const newWrappedBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv: newIv }, newKek, session.dekBytes);
+    const newSalt = crypto.getRandomValues(new Uint8Array(16));
+    const newKekBytes = await deriveKekBytes(pw1, newSalt, iterations);
+
+    const { iv: newHomeIv, wrapped: newWrappedHomeKey } = await wrapWithKek(newKekBytes, session.homeDekBytes);
+
+    // Re-wrap TAT CA department-DEK ma nguoi nay dang nam giu (giai ma bang KEK CU, ma hoa lai bang KEK MOI).
+    const oldDeptKeys = personDepartmentKeys();
+    const newDepartmentKeys = {};
+    for (const deptId of Object.keys(oldDeptKeys)) {
+      const deptDekBytes = await unwrapDeptDek(session.kekBytes, oldDeptKeys[deptId]);
+      const { iv: dIv, wrapped: dWrapped } = await wrapWithKek(newKekBytes, deptDekBytes);
+      newDepartmentKeys[deptId] = { iv: dIv, wrappedDek: dWrapped };
+    }
 
     const resp = await fetch(WORKER_BASE + "/change-password", {
       method: "POST",
@@ -893,8 +994,9 @@ document.getElementById("btn-submit-change").addEventListener("click", async () 
         token,
         proof,
         salt: bytesToB64(newSalt),
-        iv: bytesToB64(newIv),
-        wrappedDek: bytesToB64(new Uint8Array(newWrappedBuf)),
+        iv: newHomeIv,
+        wrappedHomeKey: newWrappedHomeKey,
+        departmentKeys: newDepartmentKeys,
       }),
     });
 
@@ -930,11 +1032,6 @@ setInterval(() => {
 
 tryRestoreSession();
 
-/* Test hook: lets the build be visually verified without going through the real crypto/network flow. Harmless no-op unless called explicitly. */
-window.__debugRenderApp = function(data, person) {
-  session = { person: person || "chairman", data };
-  showApp();
-};
 </script>
 </body>
 </html>
