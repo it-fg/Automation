@@ -287,6 +287,55 @@
     font-size: 13px; font-style: italic; color: var(--text-muted);
     margin-top: 28px; padding-bottom: 8px;
   }
+  /* ---- Asset registry (Tai san & Thiet bi) ---- */
+  .filterbar { background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filterbar select, .filterbar input[type="text"] { padding: 8px 10px; border: 1px solid var(--border-lt); border-radius: 8px; background: var(--surface-2); color: var(--text-primary); font-size: 12.5px; }
+  .filterbar input[type="text"] { flex: 1; min-width: 200px; }
+  .filterbar .fg-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display:block; }
+  .filterbar .fg { display: flex; flex-direction: column; }
+  .filterbar .fg-search { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
+
+  table.assettbl { width: 100%; border-collapse: collapse; background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); font-size: 12.5px; }
+  table.assettbl td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border-lt); vertical-align: middle; }
+  table.assettbl th { padding: 10px 10px; border-bottom: 1px solid var(--border-lt); vertical-align: middle;
+    background: var(--surface-2); font-weight: 700; color: var(--text-secondary); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: .3px; text-align: center; line-height: 1.35; }
+  table.assettbl tr:last-child td { border-bottom: none; }
+  .datarow { transition: background .15s ease; cursor: pointer; }
+  .datarow:hover { background: var(--surface-2); }
+  td.mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; }
+  td.assetname { font-weight: 600; color: var(--text-primary); }
+  td.qrcell { text-align: center; }
+  .statusbadge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .badge-good { background: var(--good-bg); color: var(--good-ink); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .badge-muted { background: #eceae5; color: #6b6960; }
+  .resultcount { font-size: 12px; color: var(--brand-red-ink); font-weight: 700; padding: 10px 4px 0; }
+
+  .assetdetail-wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+  .assetdetail-card { background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 14px; box-shadow: var(--shadow); padding: 20px; margin-top: 8px; }
+  .assetdetail-card .backlink { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-muted); text-decoration: none; cursor: pointer; margin-bottom: 14px; }
+  .gatecard { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border-lt); border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; }
+  .gatecard .gicon { width: 26px; height: 26px; border-radius: 8px; background: var(--good-bg); color: var(--good-ink); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .gatecard .gtext { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+  .gatecard .gtext b { color: var(--text-primary); }
+  .ad-code { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 11.5px; color: var(--brand-red-ink); font-weight: 700; background: #fff1f0; display: inline-block; padding: 3px 9px; border-radius: 20px; margin-bottom: 8px; }
+  .ad-name { font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 1.35; }
+  .ad-status { margin-top: 9px; }
+  .ad-section-label { padding: 14px 0 4px; font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; border-top: 1px solid var(--border-lt); margin-top: 10px; }
+  .ad-field { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface-2); font-size: 12.5px; }
+  .ad-field:last-child { border-bottom: none; }
+  .ad-flabel { color: var(--text-muted); flex-shrink: 0; }
+  .ad-fval { color: var(--text-primary); font-weight: 600; text-align: right; }
+  .ad-notebox { margin-top: 14px; background: var(--surface-2); border: 1px solid var(--border-lt); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
+  .ad-notebox b { color: var(--text-primary); }
+
+  @media (max-width: 640px) {
+    table.assettbl { display: block; overflow-x: auto; white-space: nowrap; }
+    .filterbar { flex-direction: column; align-items: stretch; }
+    .filterbar .fg, .filterbar .fg-search { width: 100%; }
+  }
+
   @media (max-width: 980px) { .shell { flex-direction: column; } .sidebar { width: 100%; position: static; } }
   @media (max-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } .kpirow, .smgrid { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -745,7 +794,7 @@ function renderAccessDenied(dept) {
 }
 
 async function renderDept(routeId) {
-  const dept = session.homeData.departments.find((d) => d.route === routeId);
+  const dept = findDeptByRoute(routeId);
   if (!dept || dept.status !== "active") { location.hash = "#home"; return; }
 
   const deptKeys = personDepartmentKeys();
@@ -783,13 +832,19 @@ async function renderDept(routeId) {
   document.getElementById("btn-go-home").addEventListener("click", () => { location.hash = "#home"; });
   document.getElementById("btn-go-back").addEventListener("click", () => { location.hash = window.__prevHash || "#home"; });
 
-  const sidebarItems = report.sidebar.map((s) =>
-    '<div class="navitem' + (s.active ? ' active' : ' soon') + '"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + (s.active ? '' : ' <span class="soontag">Sắp ra mắt</span>') + '</div>'
-  ).join("");
+  const sidebarItems = buildSidebarItems(report);
 
   const kpis = report.kpis.map((k) =>
     '<div class="kpi"><div class="label">' + esc(k.label) + '</div><div class="value' + (k.color === "red" ? " red" : "") + '">' + esc(k.value) + '</div><div class="foot">' + esc(k.foot) + '</div></div>'
   ).join("");
+
+  const body = document.getElementById("page-body");
+  if (report.kind === "asset-registry") {
+    renderAssetRegistryBody(body, dept, report, sidebarItems, kpis);
+    body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
+    attachSidebarNav(body);
+    return;
+  }
 
   const radarCards = report.hardware.map((h) => renderRadarMini(h.title, h.unit)).join("");
 
@@ -822,7 +877,6 @@ async function renderDept(routeId) {
     '<td' + (r.hl ? ' class="hl"' : '') + (r.verifyVtt ? ' class="verify"' : '') + '>' + esc(r.vtt) + '</td></tr>'
   ).join("");
 
-  const body = document.getElementById("page-body");
   body.innerHTML =
     '<div class="shell">' +
       '<aside class="sidebar">' +
@@ -855,6 +909,218 @@ async function renderDept(routeId) {
     '</div>' + renderClaudeCredit();
 
   body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
+  attachSidebarNav(body);
+}
+
+function findDeptByRoute(routeId) {
+  return session.homeData.departments.find((d) => d.route === routeId || (Array.isArray(d.altRoutes) && d.altRoutes.includes(routeId)));
+}
+
+function attachSidebarNav(container) {
+  container.querySelectorAll('.navitem[data-route]').forEach((el) => {
+    el.addEventListener('click', () => { location.hash = '#dept/' + el.dataset.route; });
+  });
+}
+
+function buildSidebarItems(report) {
+  return report.sidebar.map((s) => {
+    if (s.status === 'active' && s.route) {
+      return '<div class="navitem' + (s.active ? ' active' : '') + '" data-route="' + esc(s.route) + '"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + '</div>';
+    }
+    return '<div class="navitem soon"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + ' <span class="soontag">Sắp ra mắt</span></div>';
+  }).join("");
+}
+
+function renderAssetRegistryBody(body, dept, report, sidebarItems, kpis) {
+  const STATUS_CLASS = {
+    "Đang sử dụng": "badge-good",
+    "Hỏng - cần sửa": "badge-warn",
+    "Đã thanh lý": "badge-muted",
+    "Chưa xác định": "badge-muted",
+  };
+
+  function assetRow(a) {
+    return '<tr class="datarow" data-id="' + esc(a.id) + '">' +
+      '<td class="mono">' + esc(a.id) + '</td>' +
+      '<td class="assetname">' + esc(a.ten) + '</td>' +
+      '<td>' + esc(a.viTri) + '</td>' +
+      '<td>' + esc(a.khuVuc) + '</td>' +
+      '<td>' + esc(a.trachNhiem) + '</td>' +
+      '<td>' + esc(a.nguoiSuDung) + '</td>' +
+      '<td class="mono">' + esc(a.ngayDuaVao) + '</td>' +
+      '<td><span class="statusbadge ' + (STATUS_CLASS[a.tinhTrangBucket] || "badge-muted") + '">' + esc(a.tinhTrangBucket) + '</span></td>' +
+      '<td class="qrcell"><img src="data:image/png;base64,' + a.qr + '" width="36" height="36" alt="QR ' + esc(a.id) + '"/></td>' +
+    '</tr>';
+  }
+
+  const f = report.filters;
+  function optList(arr) { return arr.map((v) => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join(""); }
+
+  body.innerHTML =
+    '<div class="shell">' +
+      '<aside class="sidebar">' +
+        '<a class="backlink" data-nav="home">← Trang chủ</a>' +
+        '<div class="deptlabel">' + esc(dept.name) + '</div>' +
+        sidebarItems +
+      '</aside>' +
+      '<main class="main">' +
+        '<section class="app-section"><div class="sectiontitle"><span class="idx">1</span> Chỉ tiêu tổng quan</div><div class="kpirow">' + kpis + '</div></section>' +
+        '<section class="app-section">' +
+          '<div class="sectiontitle"><span class="idx">2</span> Lọc tìm TSCĐ và CCDC</div>' +
+          '<div class="filterbar">' +
+            '<div class="fg"><span class="fg-label">Phân loại</span><select id="f-phanloai"><option value="">Tất cả phân loại</option>' + optList(f.phanLoai) + '</select></div>' +
+            '<div class="fg"><span class="fg-label">Tình trạng</span><select id="f-tinhtrang"><option value="">Tất cả trạng thái</option>' + optList(f.tinhTrang) + '</select></div>' +
+            '<div class="fg"><span class="fg-label">Vị trí sử dụng</span><select id="f-vitri"><option value="">Tất cả vị trí</option>' + optList(f.viTri) + '</select></div>' +
+            '<div class="fg"><span class="fg-label">Trách nhiệm quản lý</span><select id="f-trachnhiem"><option value="">Tất cả đơn vị</option>' + optList(f.trachNhiem) + '</select></div>' +
+            '<div class="fg-search"><span class="fg-label">Tìm kiếm</span><input type="text" id="f-search" placeholder="Tìm theo tên, người sử dụng hoặc mã TSCĐ &amp; CCDC..."/></div>' +
+          '</div>' +
+        '</section>' +
+        '<section class="app-section">' +
+          '<div class="sectiontitle"><span class="idx">3</span> Danh mục TSCĐ và CCDC</div>' +
+          '<table class="assettbl"><thead><tr>' +
+            '<th>MÃ TSCĐ<br/>&amp; CCDC</th>' +
+            '<th>TÊN NHÃN HIỆU,<br/>QUY CÁCH TSCĐ<br/>&amp; CCDC</th>' +
+            '<th>VỊ TRÍ<br/>Sử DỤNG</th>' +
+            '<th>KHU VỰC</th>' +
+            '<th>TRÁCH NHIỆM<br/>QUẢN LÝ</th>' +
+            '<th>NGƯỌI<br/>Sử DỤNG</th>' +
+            '<th>NGÀY ĐƯ A VÀO<br/>Sử DỤNG</th>' +
+            '<th>TÌNH<br/>TRẠNG</th>' +
+            '<th>QR</th>' +
+          '</tr></thead><tbody id="asset-tbody">' + report.assets.map(assetRow).join("") + '</tbody></table>' +
+          '<div class="resultcount" id="asset-resultcount">Hiển thị ' + report.assets.length + '/' + report.assets.length + ' thiết bị</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);padding:6px 4px 0">' + esc(report.footnote) + '</div>' +
+        '</section>' +
+        '<div class="app-footer">' + esc(report.footer) + '</div>' +
+      '</main>' +
+    '</div>' + renderClaudeCredit();
+
+  const els = {
+    phanloai: document.getElementById("f-phanloai"),
+    tinhtrang: document.getElementById("f-tinhtrang"),
+    vitri: document.getElementById("f-vitri"),
+    trachnhiem: document.getElementById("f-trachnhiem"),
+    search: document.getElementById("f-search"),
+  };
+  const tbody = document.getElementById("asset-tbody");
+  const countEl = document.getElementById("asset-resultcount");
+
+  function applyFilters() {
+    const q = (els.search.value || "").trim().toLowerCase();
+    const filtered = report.assets.filter((a) => {
+      if (els.phanloai.value && a.phanLoai !== els.phanloai.value) return false;
+      if (els.tinhtrang.value && a.tinhTrangBucket !== els.tinhtrang.value) return false;
+      if (els.vitri.value && a.viTri !== els.vitri.value) return false;
+      if (els.trachnhiem.value && a.trachNhiem !== els.trachnhiem.value) return false;
+      if (q) {
+        const hay = (a.ten + " " + a.nguoiSuDung + " " + a.id + " " + (a.maTsGoc || "")).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Không tìm thấy thiết bị phù hợp — thử nới bớt điều kiện lọc hoặc từ khoá tìm kiếm.</td></tr>';
+    } else {
+      tbody.innerHTML = filtered.map(assetRow).join("");
+    }
+    countEl.textContent = "Hiển thị " + filtered.length + "/" + report.assets.length + " thiết bị";
+  }
+
+  let searchTimer = null;
+  els.search.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 250);
+  });
+  [els.phanloai, els.tinhtrang, els.vitri, els.trachnhiem].forEach((el) => {
+    el.addEventListener("change", applyFilters);
+  });
+  tbody.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-id]");
+    if (tr) location.hash = "#asset/" + encodeURIComponent(tr.dataset.id);
+  });
+}
+
+async function renderAssetDetail(assetId) {
+  const routeId = "cntt-taisan";
+  const dept = findDeptByRoute(routeId);
+  if (!dept || dept.status !== "active") { location.hash = "#home"; return; }
+
+  const deptKeys = personDepartmentKeys();
+  const keyRec = deptKeys[dept.id];
+  if (!keyRec) { renderAccessDenied(dept); return; }
+
+  let report = session.reportCache[routeId];
+  if (!report) {
+    const encBlock = session.reportsEnc[routeId];
+    if (!encBlock) { location.hash = "#home"; return; }
+    const deptDekBytes = await unwrapDeptDek(session.kekBytes, keyRec);
+    const plaintext = await decryptBlock(deptDekBytes, encBlock);
+    report = JSON.parse(plaintext);
+    session.reportCache[routeId] = report;
+  }
+
+  const asset = report.assets.find((a) => a.id === assetId);
+
+  const head = document.getElementById("page-head");
+  head.innerHTML =
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + ' / Chi tiết tài sản</div>' +
+    '<div class="titlerow"><h1>Chi tiết tài sản</h1></div>';
+  head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
+
+  const body = document.getElementById("page-body");
+
+  if (!asset) {
+    body.innerHTML = '<div class="assetdetail-wrap"><div class="assetdetail-card">' +
+      '<a class="backlink" data-nav-back>← Quay lại danh mục TSCĐ &amp; CCDC</a>' +
+      '<div class="alertbox" style="margin-top:14px"><div>⚠️</div><div><strong>Không tìm thấy tài sản</strong> Mã &quot;' + esc(assetId) + '&quot; không tồn tại hoặc đã bị xóa khỏi danh mục.</div></div>' +
+    '</div></div>' + renderClaudeCredit();
+    body.querySelector('[data-nav-back]').addEventListener("click", () => { location.hash = "#dept/cntt-taisan"; });
+    return;
+  }
+
+  const STATUS_CLASS2 = {
+    "Đang sử dụng": "badge-good",
+    "Hỏng - cần sửa": "badge-warn",
+    "Đã thanh lý": "badge-muted",
+    "Chưa xác định": "badge-muted",
+  };
+
+  function field(label, value) {
+    if (value === null || value === undefined || value === "") return "";
+    return '<div class="ad-field"><span class="ad-flabel">' + esc(label) + '</span><span class="ad-fval">' + esc(value) + '</span></div>';
+  }
+
+  body.innerHTML =
+    '<div class="assetdetail-wrap">' +
+      '<div class="assetdetail-card">' +
+        '<a class="backlink" data-nav-back>← Quay lại danh mục TSCĐ &amp; CCDC</a>' +
+        '<div class="gatecard"><div class="gicon">✓</div><div class="gtext"><b>Đã đăng nhập: ' + esc((session.person || "").toUpperCase()) + '</b><br/>Phiên làm việc hợp lệ — hiển thị thông tin tài sản bên dưới.</div></div>' +
+        '<div class="ad-head">' +
+          '<div class="ad-code">' + esc(asset.id) + '</div>' +
+          '<div class="ad-name">' + esc(asset.ten) + '</div>' +
+          '<div class="ad-status"><span class="statusbadge ' + (STATUS_CLASS2[asset.tinhTrangBucket] || "badge-muted") + '">' + esc(asset.tinhTrangBucket) + '</span></div>' +
+        '</div>' +
+        '<div class="ad-section-label">Thông tin sử dụng</div>' +
+        '<div class="ad-fields">' +
+          field("Vị trí sử dụng", asset.viTri) +
+          field("Khu vực", asset.khuVuc) +
+          field("Trách nhiệm quản lý", asset.trachNhiem) +
+          field("Người sử dụng", asset.nguoiSuDung) +
+          field("Ngày đưa vào SD", asset.ngayDuaVao) +
+          field("Mã TS gốc (kiểm kê)", asset.maTsGoc) +
+        '</div>' +
+        '<div class="ad-section-label">Giá trị &amp; khấu hao</div>' +
+        '<div class="ad-fields">' +
+          field("Đơn giá", asset.donGia) +
+          field("Thành tiền", asset.thanhTien) +
+          field("Thời gian khấu hao", asset.thoiGianKhauHao) +
+          field("Giá trị còn lại", asset.giaTriConLai) +
+        '</div>' +
+        (asset.tinhTrangGoc ? '<div class="ad-notebox"><b>Ghi chú tình trạng (gốc):</b> ' + esc(asset.tinhTrangGoc) + '</div>' : '') +
+      '</div>' +
+    '</div>' + renderClaudeCredit();
+
+  body.querySelector('[data-nav-back]').addEventListener("click", () => { location.hash = "#dept/cntt-taisan"; });
 }
 
 let __curHash = null;
@@ -864,6 +1130,8 @@ async function renderRoute() {
   __curHash = hash;
   if (hash.startsWith("#dept/")) {
     await renderDept(hash.slice(6));
+  } else if (hash.startsWith("#asset/")) {
+    await renderAssetDetail(decodeURIComponent(hash.slice(7)));
   } else {
     renderHome();
   }
@@ -876,10 +1144,15 @@ async function renderRoute() {
 
 function currentDeptName() {
   const hash = location.hash || "#home";
-  if (!hash.startsWith("#dept/")) return null;
-  const routeId = hash.slice(6);
-  const dept = session.homeData.departments.find((d) => d.route === routeId);
-  return dept ? dept.name : null;
+  if (hash.startsWith("#dept/")) {
+    const dept = findDeptByRoute(hash.slice(6));
+    return dept ? dept.name : null;
+  }
+  if (hash.startsWith("#asset/")) {
+    const dept = findDeptByRoute("cntt-taisan");
+    return dept ? dept.name : null;
+  }
+  return null;
 }
 
 function showApp() {
