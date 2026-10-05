@@ -318,6 +318,9 @@
   .badge-good { background: var(--good-bg); color: var(--good-ink); }
   .badge-warn { background: var(--warn-bg); color: var(--warn-ink); }
   .badge-muted { background: #eceae5; color: #6b6960; }
+  .badge-retired { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); }
+  .ad-retired { margin-bottom: 14px; }
+  .ad-retired b { font-weight: 700; }
   .resultcount { font-size: 12px; color: var(--brand-red-ink); font-weight: 700; padding: 10px 4px 0; }
 
   .assetdetail-wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
@@ -1304,7 +1307,16 @@ async function renderAssetDetail(assetId) {
     session.reportCache[routeId] = report;
   }
 
-  const asset = report.assets.find((a) => a.id === assetId);
+  let asset = report.assets.find((a) => a.id === assetId);
+  let isRetired = false;
+  if (!asset && Array.isArray(report.retired)) {
+    const rt = report.retired.find((a) => a.id === assetId);
+    if (rt) { asset = rt; isRetired = true; }
+  }
+  function fmtIsoDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || "");
+    return m ? m[3] + "/" + m[2] + "/" + m[1] : (s || "");
+  }
 
   const head = document.getElementById("page-head");
   head.innerHTML =
@@ -1348,10 +1360,13 @@ async function renderAssetDetail(assetId) {
       '<div class="assetdetail-card">' +
         '<a class="backlink" data-nav-back>← Quay lại danh mục TSCĐ &amp; CCDC</a>' +
         '<div class="gatecard"><div class="gicon">✓</div><div class="gtext"><b>Đã đăng nhập: ' + esc((session.person || "").toUpperCase()) + '</b><br/>Phiên làm việc hợp lệ — hiển thị thông tin tài sản bên dưới.</div></div>' +
+        (isRetired ? '<div class="alertbox ad-retired"><div>⚠️</div><div><strong>Không còn trong kiểm kê ' + esc(fmtIsoDate(asset.ngayLoai)) + '</strong>Tài sản này không xuất hiện trong bản kiểm kê gần nhất. Dữ liệu bên dưới là lần ghi nhận cuối cùng, chỉ dùng để tra cứu.' + (asset.lyDoLoai ? '<br/><b>Lý do:</b> ' + esc(asset.lyDoLoai) : '') + '</div></div>' : '') +
         '<div class="ad-head">' +
           '<div class="ad-code">' + esc(asset.id) + '</div>' +
           '<div class="ad-name">' + esc(asset.ten) + '</div>' +
-          '<div class="ad-status"><span class="statusbadge ' + (STATUS_CLASS2[asset.tinhTrangBucket] || "badge-muted") + '">' + esc(asset.tinhTrangBucket) + '</span></div>' +
+          '<div class="ad-status">' + (isRetired
+            ? '<span class="statusbadge badge-retired">Đã loại khỏi kiểm kê</span>'
+            : '<span class="statusbadge ' + (STATUS_CLASS2[asset.tinhTrangBucket] || "badge-muted") + '">' + esc(asset.tinhTrangBucket) + '</span>') + '</div>' +
         '</div>' +
         '<div class="ad-section-label">Thông tin sử dụng</div>' +
         '<div class="ad-fields">' +
@@ -1361,6 +1376,7 @@ async function renderAssetDetail(assetId) {
           field("Người sử dụng", asset.nguoiSuDung) +
           field("Ngày đưa vào SD", asset.ngayDuaVao) +
           field("Mã TS gốc (kiểm kê)", asset.maTsGoc) +
+          (isRetired ? field("Tình trạng lần ghi nhận cuối", asset.tinhTrangBucket) + field("Loại khỏi kiểm kê", fmtIsoDate(asset.ngayLoai)) : "") +
         '</div>' +
         '<div class="ad-section-label">Giá trị &amp; khấu hao</div>' +
         '<div class="ad-fields">' +
