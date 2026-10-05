@@ -190,8 +190,8 @@
   .shell { display: flex; align-items: flex-start; gap: 28px; margin-top: 20px; }
   .sidebar { width: 216px; flex-shrink: 0; position: sticky; top: 20px; }
   .sidebar .backlink { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 18px; cursor: pointer; }
-  .sidebar .deptlabel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 0 0 10px 2px; }
-  .navitem { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; transition: transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease; }
+  .sidebar .deptlabel { cursor: pointer; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); margin: 0 0 10px 2px; }
+  .navitem { cursor: pointer; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; transition: transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease; }
   .navitem .ic { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
   .navitem.active { background: var(--surface-1); border: 1px solid var(--border-lt); box-shadow: var(--shadow); color: var(--text-primary); font-weight: 700; border-left: 3px solid var(--brand-red); padding-left: 8px; }
   .navitem:hover { background: var(--surface-1); box-shadow: 0 2px 4px rgba(20,18,14,.06), 0 8px 18px rgba(20,18,14,.10); transform: translateY(-2px); }
@@ -425,6 +425,8 @@
   .cvt-logo svg { height: 100%; width: auto; display: block; }
 
   /* ---- Câu khẩu hiệu: chữ cam gradient + hiệu ứng ánh sáng ---- */
+  /* Phong serif nghieng dam (Liberation Serif Bold Italic, OFL) - subset cho cau khau hieu, nhung san de chu co 2 dau (ấ, ầ, ố...) khong bi gian cach do font fallback. Doi cau khau hieu -> chu thieu glyph se roi ve Times New Roman. */
+  @font-face { font-family: "FGQuoteSerif"; font-style: italic; font-weight: 700; font-display: swap; src: url(data:font/woff;base64,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) format("woff"); }
   .cvq { max-width: 540px; margin: 20px auto 0; padding: 0 6px; text-align: center; }
   .cvq-rule { height: 12px; display: flex; align-items: center; justify-content: center; position: relative; }
   .cvq-rule::before, .cvq-rule::after { content: ""; height: 2px; width: 34%; border-radius: 2px; }
@@ -440,7 +442,7 @@
   .cvq-text::after  { content: "\201D"; right: -2px; bottom: -32px; }
   .cvq-text span {
     display: block; padding: 0 24px;
-    font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700;
+    font-family: "FGQuoteSerif", "Times New Roman", Georgia, serif; font-style: italic; font-weight: 700;
     font-size: 17px; line-height: 1.5; text-wrap: balance;
     background: linear-gradient(100deg, #d9360b 0%, #ea5a0c 30%, #f08c00 46%, #ffb21f 52%, #f08c00 58%, #ea5a0c 76%, #d9360b 100%);
     background-size: 240% 100%; background-position: 100% 0;
@@ -837,6 +839,26 @@ const LANDING_KEY = "fg_dept_landing";
 function setLandingDept(id) { try { if (id) sessionStorage.setItem(LANDING_KEY, id); else sessionStorage.removeItem(LANDING_KEY); } catch (e) {} }
 function getLandingDept() { try { return sessionStorage.getItem(LANDING_KEY); } catch (e) { return null; } }
 
+// Mo trang gioi thieu phong ban (6 o gia tri cot loi + cau khau hieu).
+function openDeptLanding(dept) {
+  if (getLandingDept() === dept.id && document.querySelector(".cvland")) return;   // dang o trang gioi thieu roi
+  setLandingDept(dept.id);
+  const target = "#dept/" + dept.route;
+  if (location.hash === target) renderRoute(); else location.hash = target;
+}
+// "Quay lai" tu trang bao cao: ve trang gioi thieu phong ban (neu phong co >= 2 bao cao), nguoc lai ve Trang chu.
+function goBackFromReport(dept, activeNavCount) {
+  if (activeNavCount >= 2) openDeptLanding(dept); else location.hash = "#home";
+}
+// Click vao ten phong ban (duong dan o tren + tieu de sidebar) tren moi trang -> trang gioi thieu phong ban.
+document.addEventListener("click", (e) => {
+  const el = e.target && e.target.closest ? e.target.closest("[data-nav-dept]") : null;
+  if (!el) return;
+  let d = null;
+  try { d = session.homeData.departments.find((x) => x.id === el.dataset.navDept); } catch (err) { d = null; }
+  if (d) openDeptLanding(d);
+});
+
 // ---- Moc "cap nhat du lieu gan nhat": lay tu homeData.departments[].reportUpdates = { <route>: { name, at: ISO8601 } } ----
 function fmtVNTime(iso) {
   const ms = Date.parse(iso);
@@ -982,7 +1004,7 @@ function renderRadarMini(title, unitText) {
 function renderAccessDenied(dept) {
   const head = document.getElementById("page-head");
   head.innerHTML =
-    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / <a data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</a></div>' +
     '<div class="titlerow"><h1>' + esc(dept.name) + '</h1></div>';
   head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
 
@@ -1022,7 +1044,7 @@ async function renderDept(routeId) {
     const lhead = document.getElementById("page-head");
     lhead.innerHTML =
       '<div class="titlerow landing-top">' +
-        '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
+        '<div class="crumb"><a data-nav="home">Trang chủ</a> / <a data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</a></div>' +
         '<div class="quicknav">' +
           '<button class="navicon-btn" id="btn-go-home"><span>🏠</span> Trang chủ</button>' +
           '<button class="navicon-btn" id="btn-go-back"><span>←</span> Quay lại</button>' +
@@ -1031,13 +1053,13 @@ async function renderDept(routeId) {
       '<div class="subtitlerow landing-sub">' + renderUpdatedBadge() + '</div>';
     lhead.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
     document.getElementById("btn-go-home").addEventListener("click", () => { location.hash = "#home"; });
-    document.getElementById("btn-go-back").addEventListener("click", () => { location.hash = window.__prevHash || "#home"; });
+    document.getElementById("btn-go-back").addEventListener("click", () => { location.hash = "#home"; });   // trang gioi thieu -> Trang chu
     const lbody = document.getElementById("page-body");
     lbody.innerHTML =
       '<div class="shell">' +
         '<aside class="sidebar">' +
           '<a class="backlink" data-nav="home">← Trang chủ</a>' +
-          '<div class="deptlabel">' + esc(dept.name) + '</div>' +
+          '<div class="deptlabel" data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</div>' +
           buildSidebarItems(report, true) +
         '</aside>' +
         '<main class="main">' + renderDeptLandingMain() + '</main>' +
@@ -1049,7 +1071,7 @@ async function renderDept(routeId) {
 
   const head = document.getElementById("page-head");
   head.innerHTML =
-    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + '</div>' +
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / <a data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</a></div>' +
     '<div class="titlerow">' +
       '<h1>' + esc(report.title) + '</h1>' +
       '<div class="quicknav">' +
@@ -1063,7 +1085,7 @@ async function renderDept(routeId) {
     '</div>';
   head.querySelector('[data-nav="home"]').addEventListener("click", () => { location.hash = "#home"; });
   document.getElementById("btn-go-home").addEventListener("click", () => { location.hash = "#home"; });
-  document.getElementById("btn-go-back").addEventListener("click", () => { location.hash = window.__prevHash || "#home"; });
+  document.getElementById("btn-go-back").addEventListener("click", () => { goBackFromReport(dept, activeNavCount); });   // bao cao -> trang gioi thieu phong ban
 
   const sidebarItems = buildSidebarItems(report);
 
@@ -1114,7 +1136,7 @@ async function renderDept(routeId) {
     '<div class="shell">' +
       '<aside class="sidebar">' +
         '<a class="backlink" data-nav="home">← Trang chủ</a>' +
-        '<div class="deptlabel">' + esc(dept.name) + '</div>' +
+        '<div class="deptlabel" data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</div>' +
         sidebarItems +
       '</aside>' +
       '<main class="main">' +
@@ -1165,7 +1187,7 @@ function buildSidebarItems(report, noActive) {
     if (s.status === 'active' && s.route) {
       return '<div class="navitem' + (s.active && !noActive ? ' active' : '') + '" data-route="' + esc(s.route) + '"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + '</div>';
     }
-    return '<div class="navitem soon"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + ' <span class="soontag">Sắp ra mắt</span></div>';
+    return '<div class="navitem soon" title="Sắp ra mắt"><span class="ic">' + s.icon + '</span> ' + esc(s.name) + ' <span class="soontag">Sắp ra mắt</span></div>';
   }).join("");
 }
 
@@ -1198,7 +1220,7 @@ function renderAssetRegistryBody(body, dept, report, sidebarItems, kpis) {
     '<div class="shell">' +
       '<aside class="sidebar">' +
         '<a class="backlink" data-nav="home">← Trang chủ</a>' +
-        '<div class="deptlabel">' + esc(dept.name) + '</div>' +
+        '<div class="deptlabel" data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</div>' +
         sidebarItems +
       '</aside>' +
       '<main class="main">' +
@@ -1320,7 +1342,7 @@ async function renderAssetDetail(assetId) {
 
   const head = document.getElementById("page-head");
   head.innerHTML =
-    '<div class="crumb"><a data-nav="home">Trang chủ</a> / ' + esc(dept.name) + ' / Chi tiết tài sản</div>' +
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / <a data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</a> / Chi tiết tài sản</div>' +
     '<div class="titlerow">' +
       '<h1>Chi tiết tài sản</h1>' +
       '<div class="quicknav">' +
