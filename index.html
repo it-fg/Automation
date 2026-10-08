@@ -568,6 +568,100 @@
   </button>
 </div>
 
+<!-- ===================== FG INTRO PLAYER =====================
+     Lớp intro 30s phát trước khung đăng nhập. Cấu hình: intro/intro.json
+     - Chỉ phát 1 lần / phiên trình duyệt (sessionStorage fg_intro_played)
+     - Không phát khi đang có phiên đăng nhập (F5 trong phiên)
+     - Lỗi / tải chậm / máy yếu → vào thẳng trang đăng nhập
+     ========================================================================= -->
+<div id="fg-intro" aria-hidden="true">
+  <div id="fg-intro-host"></div>
+  <button id="fg-intro-sound" type="button">🔇 Bật tiếng</button>
+  <button id="fg-intro-skip" type="button">Bỏ qua ›</button>
+  <div id="fg-intro-bar"><i></i></div>
+</div>
+<style>
+  #fg-intro{position:fixed;inset:0;z-index:99999;background:#16130f;transition:opacity .45s ease;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #fg-intro.fgi-out{opacity:0;pointer-events:none}
+  #fg-intro-host{position:absolute;inset:0;pointer-events:none}
+  #fg-intro button{position:absolute;bottom:28px;font:600 14px Roboto,"Segoe UI",sans-serif;color:#f5f4f1;background:rgba(22,19,15,.55);border:1px solid rgba(245,244,241,.35);border-radius:999px;padding:9px 18px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .3s,background .2s}
+  #fg-intro button:hover{background:rgba(226,35,26,.85);border-color:#e2231a}
+  #fg-intro.fgi-playing #fg-intro-sound,#fg-intro #fg-intro-skip.on{opacity:1;visibility:visible}
+  #fg-intro-sound{left:28px}
+  #fg-intro-skip{right:28px}
+  #fg-intro-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.12);opacity:0;transition:opacity .3s}
+  #fg-intro.fgi-playing #fg-intro-bar{opacity:1}
+  #fg-intro-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e2231a,#ebc100)}
+  @media (max-width:600px){#fg-intro button{bottom:16px;font-size:12px;padding:7px 12px}#fg-intro-sound{left:16px}#fg-intro-skip{right:16px}}
+</style>
+<script>
+(function () {
+  var ov = document.getElementById('fg-intro'); if (!ov) return;
+  var BASE = 'intro/', PLAYED = 'fg_intro_played', done = false, safety = null, audio = null, handle = null, t = 0, D = 30, skipAfter = 5;
+  function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } }
+  function finish() {
+    if (done) return; done = true; clearTimeout(safety);
+    try { if (audio) audio.pause(); } catch (e) {}
+    ov.classList.add('fgi-out');
+    setTimeout(function () { try { if (handle) handle.destroy(); } catch (e) {} if (ov.parentNode) ov.parentNode.removeChild(ov); }, 500);
+  }
+  /* Đang có phiên đăng nhập (F5) hoặc đã xem trong phiên này → bỏ qua */
+  if (ss('fg_dashboard_session') || ss(PLAYED)) { ov.parentNode.removeChild(ov); return; }
+  safety = setTimeout(finish, 6000); /* không khởi động được trong 6s → vào đăng nhập */
+  ov.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  ov.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  function todayVN() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+    catch (e) { var d = new Date(Date.now() + 7 * 3600e3); return d.toISOString().slice(0, 10); }
+  }
+  function loadScript(src) { return new Promise(function (r, j) { var s = document.createElement('script'); s.src = src; s.onload = r; s.onerror = j; document.head.appendChild(s); }); }
+  function getJSON(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
+  getJSON(BASE + 'intro.json').then(function (cfg) {
+    if (done) return;
+    var d = todayVN();
+    var list = (cfg.intros || []).filter(function (x) { return x.enabled !== false && x.from <= d && d <= x.to; })
+      .sort(function (a, b) { return a.from < b.from ? 1 : -1; });
+    var id = list.length ? list[0].id : cfg['default'];
+    if (!id) { finish(); return; }
+    if (cfg.skipAfter != null) skipAfter = cfg.skipAfter;
+    var v = '?v=' + encodeURIComponent(cfg.rev || '1');
+    return Promise.all([loadScript(BASE + 'engine/intro-engine.js' + v), getJSON(BASE + id + '/scene.json' + v)]).then(function (res) {
+      var sc = res[1];
+      return window.FGIntro.mount(document.getElementById('fg-intro-host'), sc, BASE).then(function (h) { handle = h; play(sc, v); });
+    });
+  }).catch(function (e) { console.warn('[intro] bỏ qua intro:', e); finish(); });
+
+  function play(sc, v) {
+    if (done) { try { handle.destroy(); } catch (e) {} return; }
+    clearTimeout(safety); ss(PLAYED, '1'); D = handle.duration || 30;
+    var btnS = document.getElementById('fg-intro-sound'), btnK = document.getElementById('fg-intro-skip'), bar = document.querySelector('#fg-intro-bar i');
+    if (sc.music) { audio = new Audio(BASE + sc.id + '/' + sc.music + v); audio.preload = 'auto'; audio.muted = true; audio.play().catch(function () {}); }
+    else btnS.style.display = 'none';
+    btnS.onclick = function () {
+      if (!audio) return; audio.muted = !audio.muted;
+      if (!audio.muted) { try { audio.currentTime = t; } catch (e) {} audio.play().catch(function () {}); }
+      btnS.textContent = audio.muted ? '🔇 Bật tiếng' : '🔊 Tắt tiếng';
+    };
+    btnK.onclick = finish;
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && t >= skipAfter) finish(); });
+    ov.classList.add('fgi-playing');
+    var t0 = performance.now(), last = t0, slow = 0;
+    (function loop(now) {
+      if (done) return;
+      t = Math.max(0, (now - t0) / 1000);
+      if (t > .5 && t < 4 && now - last > 90) slow++;   /* máy quá yếu (<11 fps) → bỏ qua */
+      last = now;
+      if (slow > 12) { console.warn('[intro] máy chậm, bỏ qua intro'); finish(); return; }
+      if (t >= D) { handle.render(D); bar.style.width = '100%'; finish(); return; }
+      handle.render(t); bar.style.width = (t / D * 100).toFixed(2) + '%';
+      if (t >= skipAfter) btnK.classList.add('on');
+      requestAnimationFrame(loop);
+    })(t0);
+  }
+})();
+</script>
+<!-- =================== /FG INTRO PLAYER =================== -->
+
 <script>
 const WORKER_BASE = "https://fg-dashboard-auth.cntt-fg.workers.dev";
 

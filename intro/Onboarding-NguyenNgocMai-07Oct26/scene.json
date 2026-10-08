@@ -1,0 +1,16 @@
+{
+  "id": "Onboarding-NguyenNgocMai-07Oct26",
+  "template": "onboarding",
+  "duration": 30,
+  "music": "music.mp3",
+  "data": {
+    "tieuDe": "Giới thiệu nhân sự mới!",
+    "hoTen": "Nguyễn Ngọc Mai",
+    "chucDanh": "Thành viên HĐQT",
+    "phongBan": "HĐQT",
+    "ngayGiaNhap": "07/10/2026",
+    "poster": "poster.jpg",
+    "loiChuc": ["Chào mừng chị Ngọc Mai đến với đại gia đình F.I.T!", "Cùng nhau làm việc, học hỏi và phát triển."],
+    "kyTen": "Ban Lãnh đạo Tập đoàn F.I.T"
+  }
+}
