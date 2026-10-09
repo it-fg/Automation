@@ -1,9 +1,10 @@
 {
-  "rev": "2026.10.001-intro1",
+  "rev": "2026.10.001-intro2",
   "timezone": "Asia/Ho_Chi_Minh",
   "skipAfter": 5,
   "default": null,
   "intros": [
-    { "id": "Onboarding-NguyenNgocMai-07Oct26", "from": "2026-10-08", "to": "2026-10-10", "enabled": true, "note": "Chào mừng chị Nguyễn Ngọc Mai – Thành viên HĐQT" }
+    { "id": "Onboarding-NguyenNgocMai-07Oct26", "from": "2026-10-08", "to": "2026-10-10", "enabled": true, "note": "Chào mừng chị Nguyễn Ngọc Mai – Thành viên HĐQT" },
+    { "id": "Sukien-NgayPhuNuVN-18Oct26", "from": "2026-10-20", "to": "2026-10-20", "enabled": true, "note": "Ngày Phụ nữ Việt Nam 20/10 – chỉ phát đúng ngày 20/10 (bất ngờ)" }
   ]
 }

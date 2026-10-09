@@ -257,7 +257,8 @@
     var d = sc.data || {}, T = sc.duration || 30, assets = {};
     return Promise.all([
       loadLogo(base, '#f5f4f1').then(function (i) { assets.logo = i; }),
-      loadImg(base + 'engine/art/phunu-aodai.svg').then(function (i) { assets.woman = i; }),
+      Promise.all((d.hinh && d.hinh.length ? d.hinh : ['engine/art/phunu-aodai.svg']).map(function (h) { return loadImg(base + h); }))
+        .then(function (arr) { assets.figs = arr; }),
       loadImg(base + 'engine/art/hoa-hong.svg').then(function (i) { assets.rose = i; })
     ]).then(function () {
       var S = makeStage(host, C.bg), st = S.stage;
@@ -267,7 +268,26 @@
       var cols = ['#f06292', '#e2231a', '#f8bbd0', '#ec407a', '#ffd1dc'];
       for (var i = 0; i < 70; i++) PT.push({ x: R() * W * 1.2 - W * .1, y0: -R() * H * 1.2, sp: 60 + R() * 90, sw: 30 + R() * 70, ph: R() * 6.28, rs: (R() - .5) * 3, sz: 10 + R() * 18, c: cols[Math.floor(R() * cols.length)], a: .55 + R() * .45, z: R() });
 
-      var woman = el('img', 'position:absolute;left:170px;bottom:-10px;height:1020px;transform-origin:50% 100%;opacity:0;', st); woman.src = assets.woman.src;
+      /* Hình minh hoạ đặt bên trái, căn giữa tại x = 425px.
+         - Hình vẽ SVG (nền trong suốt): đứng trên đáy khung, cao 1020px.
+         - Ảnh JPG/PNG có nền (tranh hoàn chỉnh): hiện trong khung thẻ bo góc viền vàng, cao 920px, ảnh zoom chậm.
+         Thứ tự đổi hình: 4 hình = [tiêu đề, câu chúc 1, câu chúc 2, ký tên]; 3 hình = [mở đầu+câu 1, câu 2, ký tên]. */
+      var isCard = function (im) { return !/\.svg(\?|$)/i.test(im.src) && !/^data:image\/svg/i.test(im.src); };
+      var anyCard = assets.figs.some(isCard);
+      var figs = assets.figs.map(function (im) {
+        var ratio = (im.naturalWidth || 500) / (im.naturalHeight || 1000);
+        if (isCard(im)) {
+          var ch = 920, cw = ch * ratio;
+          var box = el('div', 'position:absolute;left:' + (425 - cw / 2).toFixed(0) + 'px;top:' + ((H - ch) / 2).toFixed(0) + 'px;width:' + cw.toFixed(0) + 'px;height:' + ch +
+            'px;border-radius:22px;overflow:hidden;opacity:0;transform-origin:50% 50%;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 6px #ebc100,0 0 0 9px rgba(255,236,160,.35);', st);
+          var ig = el('img', 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 40%;', box);
+          ig.src = im.src; box._kb = ig; return box;
+        }
+        var h = 1020, w = h * ratio;
+        if (w > 800) { h = h * 800 / w; w = 800; }       /* hình tập thể rộng: thu vừa 800px, không lấn sang cột chữ */
+        var e = el('img', 'position:absolute;left:' + (425 - w / 2).toFixed(0) + 'px;bottom:-10px;height:' + h.toFixed(0) + 'px;transform-origin:50% 100%;opacity:0;', st);
+        e.src = im.src; return e;
+      });
       var roseL = el('img', 'position:absolute;left:-120px;bottom:-90px;width:440px;transform-origin:30% 80%;opacity:0;', st); roseL.src = assets.rose.src;
       var roseR = el('img', 'position:absolute;right:-70px;bottom:-80px;width:460px;transform-origin:70% 80%;opacity:0;transform:scaleX(-1);', st); roseR.src = assets.rose.src;
 
@@ -308,21 +328,36 @@
         ctx.restore();
       }
 
-      function render(t) {
+      function renderAt(t, rt) {
         /* cánh hoa */
         pctx.clearRect(0, 0, W, H);
-        var pa = E.out(seg(t, .2, 2)) * (1 - .7 * seg(t, T - 2.5, T - .3));
-        if (pa > 0) { pctx.globalAlpha = 1; for (var i = 0; i < PT.length; i++) { pctx.save(); pctx.globalAlpha = pa; petal(pctx, PT[i], t + 6); pctx.restore(); } }
+        var pa = E.out(seg(t, .2, 2)) * (1 - .7 * seg(t, T0 - 2.5, T0 - .3));
+        if (pa > 0) { pctx.globalAlpha = 1; for (var i = 0; i < PT.length; i++) { pctx.save(); pctx.globalAlpha = pa; petal(pctx, PT[i], rt + 6); pctx.restore(); } }
         /* 0–5s logo */
         var lp = E.out(seg(t, .3, 1.8)), lo = E.inOut(seg(t, 4.2, 5));
         set(logo, Math.min(lp, 1 - lo), 'scale(' + (lerp(.86, 1, lp) + .06 * lo) + ')');
-        mini.style.opacity = .85 * fio(t, 5.4, 6.2, T - 3, T - 2);
+        mini.style.opacity = .85 * fio(t, 5.4, 6.2, T0 - 3, T0 - 2);
         /* hình minh hoạ + hoa */
         var wp = E.out(seg(t, 5, 6.8));
-        set(woman, wp, 'translateX(' + (-120 * (1 - wp)) + 'px) rotate(' + (Math.sin(t * .8) * .6) + 'deg)');
+        var sw = Math.sin(rt * .8) * .6;
+        var cut1 = 13.4 + qDur[0], cut2 = 23.2;           /* mốc đổi hình (theo thời gian kịch bản 30s) */
+        var cuts = figs.length >= 4 ? [13.2, cut1, cut2] : [cut1, cut2];
+        figs.forEach(function (e, i) {
+          var inP = i === 0 ? wp : E.out(seg(t, cuts[i - 1] - .3, cuts[i - 1] + .7));
+          var outP = i < figs.length - 1 ? E.inOut(seg(t, cuts[i] - .4, cuts[i] + .4)) : 0;
+          var o = Math.min(inP, 1 - outP);
+          var tx = i === 0 ? -120 * (1 - wp) : 0;
+          var sc = i === 0 ? 1 : lerp(.94, 1, inP);
+          set(e, o, 'translateX(' + tx + 'px) scale(' + sc + ') rotate(' + sw + 'deg)');
+          if (e._kb) {                                    /* zoom chậm trong khung (Ken Burns) */
+            var st0 = i === 0 ? 5 : cuts[i - 1] - .3, st1 = i < figs.length - 1 ? cuts[i] + .4 : T0;
+            e._kb.style.transform = 'scale(' + lerp(1.0, 1.08, seg(t, st0, st1)) + ')';
+          }
+        });
         var rl = E.back(seg(t, 5.6, 7.2)), rr = E.back(seg(t, 6, 7.6));
-        set(roseL, Math.min(1, rl * 1.2), 'scale(' + (rl * (1 + .015 * Math.sin(t * 1.3))) + ') rotate(' + (Math.sin(t * .7) * 1.2) + 'deg)');
-        set(roseR, Math.min(1, rr * 1.2), 'scaleX(-1) scale(' + (rr * (1 + .015 * Math.sin(t * 1.1 + 1))) + ') rotate(' + (Math.sin(t * .6 + 2) * 1.2) + 'deg)');
+        if (anyCard) rl = 0;                              /* ảnh khung: ẩn cụm hoa trái để không che ảnh */
+        set(roseL, Math.min(1, rl * 1.2), 'scale(' + (rl * (1 + .015 * Math.sin(rt * 1.3))) + ') rotate(' + (Math.sin(rt * .7) * 1.2) + 'deg)');
+        set(roseR, Math.min(1, rr * 1.2), 'scaleX(-1) scale(' + (rr * (1 + .015 * Math.sin(rt * 1.1 + 1))) + ') rotate(' + (Math.sin(rt * .6 + 2) * 1.2) + 'deg)');
         /* 5.6–13s tiêu đề */
         var ho = 1 - E.inOut(seg(t, 12.4, 13.1));
         head.style.opacity = ho; head.style.transform = 'translateY(' + (-30 * (1 - ho)) + 'px)';
@@ -331,7 +366,7 @@
         var bp = E.out(seg(t, 7, 8.4));
         set(big, bp, 'scale(' + lerp(.8, 1, E.back(seg(t, 7, 8.4))) + ')');
         big.style.transformOrigin = '0% 60%';
-        big.style.backgroundPosition = (100 - ((t * 22) % 160)) + '% 0';
+        big.style.backgroundPosition = (100 - ((rt * 22) % 160)) + '% 0';
         /* 13–23s lời chúc (mỗi câu 1 nửa) */
         /* chia 10s cho các câu theo độ dài chữ (tối thiểu 3.5s/câu) */
         quote.style.opacity = fio(t, 13.1, 13.8, 22.5, 23.1);
@@ -342,11 +377,21 @@
           set(e, o, 'translateY(' + (26 * (1 - E.out(seg(t, a, a + .8)))) + 'px)');
         });
         /* 23–27s ký tên */
-        var so = fio(t, 23.2, 24, T - 2.4, T - 1.6);
+        var so = fio(t, 23.2, 24, T0 - 2.4, T0 - 1.6);
         set(signBox, so, 'translateY(' + (24 * (1 - E.out(seg(t, 23.2, 24)))) + 'px)');
         /* 28–30s mờ về nền */
-        fade.style.opacity = E.inOut(seg(t, T - 2, T - .15));
+        fade.style.opacity = E.inOut(seg(t, T0 - 2, T0 - .15));
       }
+      /* Kéo dài intro theo độ dài nhạc (T > 30s): giữ nguyên 0–13s, giãn phần lời chúc (60%)
+         và phần ký tên (40%) để khớp đúng thời lượng bài hát, 2s cuối luôn là mờ dần. */
+      var T0 = 30, EX = Math.max(0, T - T0), E1 = EX * .6, E2 = EX - E1;
+      function remap(t) {
+        if (t <= 13) return t;
+        if (t <= 23 + E1) return 13 + (t - 13) * 10 / (10 + E1);
+        if (t <= 28 + E1 + E2) return 23 + (t - 23 - E1) * 5 / (5 + E2);
+        return 28 + (t - 28 - E1 - E2);
+      }
+      function render(t) { renderAt(remap(t), t); }
       render(0);
       return { duration: T, render: render, destroy: S.destroy };
     });
