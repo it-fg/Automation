@@ -582,6 +582,22 @@
     .ogsm-tia, .ogsm-sao, .ogsm-quet, .ogsm-chu { animation: none; }
     .nw-kpi, .nw-kpi .nw-hint, .nw-dot, .nw-slice, .nw-bar, .nw-legend li, .nw-tip, .nw-table td, .nw-mbar i, .nw-delta { transition: none; }
   }
+
+  /* ---- Bao cao nhung (report.kind === "embedded-html") - A5 Bao cao dong tien ---- */
+  .emb-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; padding: 10px 14px; box-shadow: var(--shadow); }
+  .emb-src { flex: 1 1 520px; min-width: 0; font-size: 12.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .emb-src b { color: var(--text-primary); }
+  .emb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good-ink); box-shadow: 0 0 0 3px var(--good-bg); flex-shrink: 0; }
+  .emb-sep { color: var(--border-lt); }
+  .emb-note { margin-top: 10px; font-size: 12px; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px; padding: 8px 12px; }
+  .emb-frame { position: relative; margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-lt); box-shadow: var(--shadow); background: #0d0e11; }
+  .emb-frame iframe { display: block; width: 100%; height: max(640px, calc(100vh - 260px)); border: 0; }
+  .emb-frame:fullscreen iframe { height: 100vh; }
+  .emb-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #c3c2b7; font-size: 13px; pointer-events: none; }
+  .emb-frame.ready .emb-loading { display: none; }
+  .emb-msg { background: var(--surface-1); border: 1px solid var(--border-lt); border-radius: 12px; padding: 18px 20px; font-size: 13.5px; color: var(--text-secondary); box-shadow: var(--shadow); }
+  .emb-msg b { color: var(--text-primary); }
+  @media (max-width: 700px) { .emb-frame iframe { height: calc(100vh - 120px); min-height: 520px; } .emb-bar { padding: 8px 10px; } .emb-src { flex-basis: 100%; gap: 2px 8px; font-size: 12px; } .emb-sep { display: none; } .emb-src > span:not(.emb-dot) { flex-basis: calc(100% - 16px); } .emb-src > span.emb-dot + span { flex-basis: calc(100% - 16px); } .emb-note { font-size: 11.5px; } }
 </style>
 </head>
 <body>
@@ -925,6 +941,7 @@ async function loadSessionCore(person, kekBytes, auth) {
     person, kekBytes, homeDekBytes, auth, homeData,
     reportsEnc: encContent.reports || {},
     reportCache: {},
+    extEnc: {},   // A5: file bao cao rieng { <route>: doc | null }
   };
 }
 
@@ -1234,6 +1251,144 @@ function nwBars(root, box, d) {
   });
 }
 
+
+// ---- BAO CAO NAM O FILE RIENG (A5, 11/2026) ----
+// Khong nam trong dashboard-data.enc.json: moi bao cao 1 file, ma hoa bang khoa CUA PHONG (department DEK),
+// noi dung nen gzip truoc khi ma hoa. Chi "updatedAt" de cong khai (moc thoi gian cho huy hieu).
+// Muc sidebar trung ten/route trong bao cao cung phong se tu chuyen tu "Sap ra mat" sang dang hoat dong.
+const EXTERNAL_REPORTS = {
+  "taichinh-dongtien": {
+    dept: "taichinh",
+    path: "./data/taichinh-dongtien.enc.json",
+    name: "Báo cáo dòng tiền",
+    icon: "💵",
+    title: "Báo cáo dòng tiền",
+    subtitle: "Dòng tiền hằng ngày của các đơn vị thành viên — nguyên bản Trung tâm Báo cáo Dòng tiền của Ban Tài Chính.",
+    sourceName: "Trung tâm Báo cáo Dòng tiền — Giai đoạn 2 (Ban Tài Chính)",
+    schedule: "08:30 và 18:30, Thứ 2 – Thứ 6",
+    note: "Báo cáo hiển thị nguyên bản từ công cụ của Ban Tài Chính. Tab “Tải dữ liệu lên” chỉ để xem: file tải vào đây chỉ hiện tạm trên máy của Anh/Chị, không cập nhật lên hệ thống.",
+  },
+};
+
+// Tai file ma hoa (1 lan/phien, tai lai neu bao loi). Tra ve doc hoac null (chua co file / loi mang).
+async function loadExternalEnc(route) {
+  if (!session.extEnc) session.extEnc = {};
+  if (session.extEnc[route]) return session.extEnc[route];
+  const ext = EXTERNAL_REPORTS[route];
+  try {
+    const res = await fetch(ext.path, { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const doc = await res.json();
+    if (!doc || doc.kind !== "embedded-html" || doc.dept !== ext.dept || !doc.iv || !doc.ciphertext) throw new Error("sai khuon file");
+    session.extEnc[route] = doc;
+    return doc;
+  } catch (e) {
+    session.extEnc[route] = null;
+    if (window.console) console.warn("[" + route + "] khong tai duoc file du lieu:", e && e.message);
+    return null;
+  }
+}
+
+// Tai ngam cac file rieng cua nhung phong nguoi dung CO QUYEN, de huy hieu "cap nhat gan nhat" co moc moi nhat.
+function prefetchExternalReports() {
+  if (!session) return;
+  const keys = personDepartmentKeys();
+  Object.keys(EXTERNAL_REPORTS).forEach((route) => {
+    if (!keys[EXTERNAL_REPORTS[route].dept]) return;
+    if (session.extEnc && route in session.extEnc) return;
+    loadExternalEnc(route).then((doc) => {
+      if (!doc) return;
+      const el = document.getElementById("hero-updated");
+      if (el) el.textContent = updatedBadgeText(location.hash || "#home");
+    });
+  });
+}
+
+async function gunzipToText(bytes) {
+  const ds = new DecompressionStream("gzip");
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return await new Response(stream).text();
+}
+
+// Giai ma bao cao file rieng -> report object kieu "embedded-html". Nem loi neu khong giai ma duoc.
+async function decryptExternalReport(route, deptDekBytes, doc) {
+  const ext = EXTERNAL_REPORTS[route];
+  const key = await importAesKey(deptDekBytes, ["decrypt"]);
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(doc.iv) }, key, b64ToBytes(doc.ciphertext));
+  const html = await gunzipToText(new Uint8Array(plainBuf));
+  return {
+    kind: "embedded-html", title: ext.title, subtitle: ext.subtitle, kpis: [], sidebar: [],
+    source: { name: ext.sourceName, schedule: ext.schedule, syncedAt: doc.updatedAt },
+    note: ext.note, html,
+  };
+}
+
+// Sidebar cua phong: bat cac muc co bao cao file rieng (neu file khong bao loi), va danh dau "dang xem" theo route hien tai.
+function upgradeSidebar(sidebar, deptId, currentRoute) {
+  const out = (sidebar || []).map((s) => {
+    const r = s.route && EXTERNAL_REPORTS[s.route] ? s.route :
+      Object.keys(EXTERNAL_REPORTS).find((k) => EXTERNAL_REPORTS[k].dept === deptId && EXTERNAL_REPORTS[k].name === s.name);
+    if (r && s.status !== "active" && !(session.extEnc && session.extEnc[r] === null)) return Object.assign({}, s, { status: "active", route: r });
+    return Object.assign({}, s);
+  });
+  Object.keys(EXTERNAL_REPORTS).forEach((r) => {   // phong chua co muc nao cho bao cao nay -> them vao cuoi
+    const ext = EXTERNAL_REPORTS[r];
+    if (ext.dept === deptId && !out.some((s) => s.route === r) && !(session.extEnc && session.extEnc[r] === null))
+      out.push({ icon: ext.icon, name: ext.name, status: "active", route: r, active: false });
+  });
+  if (currentRoute) out.forEach((s) => { if (s.status === "active" && s.route) s.active = (s.route === currentRoute); });
+  return out;
+}
+
+function renderExternalMessage(dept, title, html) {
+  document.getElementById("page-head").innerHTML =
+    '<div class="crumb"><a data-nav="home">Trang chủ</a> / <a data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</a></div>' +
+    '<div class="titlerow"><h1>' + esc(title) + '</h1></div>';
+  const body = document.getElementById("page-body");
+  body.innerHTML = '<div class="emb-msg" role="alert">' + html + '</div>' + renderClaudeCredit();
+  document.querySelectorAll('#page-head [data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
+}
+
+// A6 (05/11/2026): bao cao member xuat luu cung kich thuoc bieu do (canvas 300px...) -> o luoi CSS khong co
+// lai duoc, khung nhung tran ngang. Chen CSS cho phep o co lai; Chart.js (responsive) tu ve lai vua khung.
+// Chen ngay sau <head> dau tien (trong 5000 ky tu dau); khong thay thi giu nguyen bao cao.
+const EMB_FIT_CSS = '<style id="fg-emb-fit">.main-grid>*,.main-grid-3>*,.dash-cards>*{min-width:0}canvas{max-width:100%}</style>';
+function fitEmbedCss(html) {
+  const m = /<head\b[^>]*>/i.exec(String(html).slice(0, 5000));
+  if (!m) return html;
+  const k = m.index + m[0].length;
+  return html.slice(0, k) + EMB_FIT_CSS + html.slice(k);
+}
+
+// ---- Bao cao nhung nguyen ban artifact (report.kind === "embedded-html") ----
+// iframe sandbox KHONG co allow-same-origin -> trang nhung khong doc duoc sessionStorage/DOM cua cong bao cao.
+function renderEmbeddedBody(body, dept, report, sidebarItems) {
+  const src = report.source || {};
+  body.innerHTML =
+    '<div class="shell">' +
+      '<aside class="sidebar">' +
+        '<a class="backlink" data-nav="home">← Trang chủ</a>' +
+        '<div class="deptlabel" data-nav-dept="' + esc(dept.id) + '">' + esc(dept.name) + '</div>' +
+        sidebarItems +
+      '</aside>' +
+      '<main class="main">' +
+        '<div class="emb-bar">' +
+          '<div class="emb-src"><span class="emb-dot"></span><span>Nguồn: <b>' + esc(src.name || "") + '</b></span>' +
+            '<span class="emb-sep">|</span><span>Đồng bộ tự động ' + esc(src.schedule || "") + '</span>' +
+            '<span class="emb-sep">|</span><span>Lần đồng bộ gần nhất: <b>' + esc(fmtVNTime(src.syncedAt) || "—") + '</b></span></div>' +
+          '<button class="navicon-btn" id="emb-full" type="button"><span>⛶</span> Toàn màn hình</button>' +
+        '</div>' +
+        (report.note ? '<div class="emb-note">ⓘ ' + esc(report.note) + '</div>' : '') +
+        '<div class="emb-frame" id="emb-frame"><iframe id="emb-iframe" sandbox="allow-scripts allow-downloads allow-popups" referrerpolicy="no-referrer" title="' + esc(report.title) + '"></iframe>' +
+          '<div class="emb-loading">Đang hiển thị báo cáo…</div></div>' +
+      '</main>' +
+    '</div>' + renderClaudeCredit();
+  const fr = document.getElementById("emb-frame"), ifr = document.getElementById("emb-iframe");
+  ifr.addEventListener("load", () => fr.classList.add("ready"), { once: true });
+  ifr.srcdoc = fitEmbedCss(report.html);
+  document.getElementById("emb-full").addEventListener("click", () => { try { (fr.requestFullscreen || fr.webkitRequestFullscreen).call(fr); } catch (e) {} });
+}
+
 function renderNorthwindBody(body, dept, report, sidebarItems) {
   const d = report.data;
   const thang = d.doanhThuTheoThang, cuoi = thang[thang.length - 1];
@@ -1382,6 +1537,11 @@ function latestReportUpdate(dept) {
       if (!isNaN(ms) && (!best || ms > best.ms)) best = { ms, at: u.at, name: u.name };
     });
   }
+  if (dept && session && session.extEnc) Object.keys(EXTERNAL_REPORTS).forEach((route) => {   // A5
+    const ext = EXTERNAL_REPORTS[route], doc = session.extEnc[route];
+    const ms = doc && ext.dept === dept.id ? Date.parse(doc.updatedAt) : NaN;
+    if (!isNaN(ms) && (!best || ms > best.ms)) best = { ms, at: doc.updatedAt, name: ext.name };
+  });
   return best;
 }
 function updatedBadgeText(hash) {
@@ -1419,6 +1579,7 @@ function personDepartmentKeys() {
 
 function renderHome() {
   setLandingDept(null);
+  prefetchExternalReports();   // A5
   const data = session.homeData;
   const deptKeys = personDepartmentKeys();
   const head = document.getElementById("page-head");
@@ -1536,6 +1697,35 @@ async function renderDept(routeId) {
   const landingOnly = isLandingOnlyRoute(dept, routeId);
   const reportRoute = landingOnly ? firstAltReportRoute(dept) : routeId;
   let report = session.reportCache[reportRoute];
+  if (!report && EXTERNAL_REPORTS[reportRoute] && !session.reportsEnc[reportRoute]) {   // A5: bao cao file rieng
+    const ext = EXTERNAL_REPORTS[reportRoute];
+    document.getElementById("page-body").innerHTML = '<div class="emb-msg">Đang tải và giải mã <b>' + esc(ext.name) + '</b>…</div>';
+    if (session.extEnc && session.extEnc[reportRoute] === null) delete session.extEnc[reportRoute];   // bao loi lan truoc -> thu lai
+    const doc = await loadExternalEnc(reportRoute);
+    if (!doc) {
+      renderExternalMessage(dept, ext.title, "<b>" + esc(ext.name) + "</b> chưa có dữ liệu hoặc không tải được. Anh/Chị thử tải lại trang sau ít phút; nếu vẫn lỗi, vui lòng báo Phòng CNTT.");
+      return;
+    }
+    try {
+      const deptDekBytes = await unwrapDeptDek(session.kekBytes, keyRec);
+      report = await decryptExternalReport(reportRoute, deptDekBytes, doc);
+    } catch (e) {
+      if (window.console) console.error("[" + reportRoute + "] giai ma that bai:", e);
+      renderExternalMessage(dept, ext.title, "Không giải mã được <b>" + esc(ext.name) + "</b>. Dữ liệu có thể đang được cập nhật khoá bảo mật; Anh/Chị thử lại sau, nếu vẫn lỗi vui lòng báo Phòng CNTT.");
+      return;
+    }
+    const baseRoute = firstAltReportRoute(dept) || dept.route;   // sidebar lay tu bao cao chinh cua phong
+    let base = session.reportCache[baseRoute];
+    if (!base && session.reportsEnc[baseRoute]) {
+      try {
+        const dk = await unwrapDeptDek(session.kekBytes, keyRec);
+        base = JSON.parse(await decryptBlock(dk, session.reportsEnc[baseRoute]));
+        session.reportCache[baseRoute] = base;
+      } catch (e) { base = null; }
+    }
+    report.sidebar = (base && base.sidebar) || [];
+    session.reportCache[reportRoute] = report;
+  }
   if (!report) {
     const encBlock = session.reportsEnc[reportRoute];
     if (!encBlock) { location.hash = "#home"; return; }
@@ -1544,6 +1734,8 @@ async function renderDept(routeId) {
     report = JSON.parse(plaintext);
     session.reportCache[reportRoute] = report;
   }
+  // A5: ban sao de hien thi - bat muc bao cao file rieng, danh dau muc dang xem (khong sua ban trong cache)
+  report = Object.assign({}, report, { sidebar: upgradeSidebar(report.sidebar, dept.id, landingOnly ? null : reportRoute) });
 
   // Vao phong ban tu Trang chu (chua chon bao cao nao): hien trang gioi thieu "Gia tri cot loi", chua hien bao cao.
   const activeNavCount = (report.sidebar || []).filter((s) => s.status === "active" && s.route).length;
@@ -1608,6 +1800,12 @@ async function renderDept(routeId) {
     return;
   }
 
+  if (report.kind === "embedded-html") {   // A5
+    renderEmbeddedBody(body, dept, report, sidebarItems);
+    body.querySelectorAll('[data-nav="home"]').forEach((el) => el.addEventListener("click", () => { location.hash = "#home"; }));
+    attachSidebarNav(body);
+    return;
+  }
   if (report.kind === "northwnd-sales") {
     try {
       renderNorthwindBody(body, dept, report, sidebarItems);
@@ -1687,7 +1885,10 @@ async function renderDept(routeId) {
 }
 
 function findDeptByRoute(routeId) {
-  return session.homeData.departments.find((d) => d.route === routeId || (Array.isArray(d.altRoutes) && d.altRoutes.includes(routeId)));
+  const d0 = session.homeData.departments.find((d) => d.route === routeId || (Array.isArray(d.altRoutes) && d.altRoutes.includes(routeId)));
+  if (d0) return d0;
+  const ext = EXTERNAL_REPORTS[routeId];   // A5: bao cao file rieng
+  return ext ? session.homeData.departments.find((d) => d.id === ext.dept) : undefined;
 }
 
 function attachSidebarNav(container) {
