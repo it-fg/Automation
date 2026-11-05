@@ -1,2 +1,5 @@
 .secrets/
 *.old-*
+*.tmp
+*.tmp-*
+*.bak-*
