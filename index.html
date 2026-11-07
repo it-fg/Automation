@@ -1260,6 +1260,7 @@ const EXTERNAL_REPORTS = {
   "taichinh-dongtien": {
     dept: "taichinh",
     path: "./data/taichinh-dongtien.enc.json",
+    kv: true, // B6 (11/2026): doc Workers KV qua fg-dashboard-auth truoc, loi thi quay ve file GitHub
     name: "Báo cáo dòng tiền",
     icon: "💵",
     title: "Báo cáo dòng tiền",
@@ -1270,15 +1271,56 @@ const EXTERNAL_REPORTS = {
   },
 };
 
+// B6 (11/2026): doc ban niem phong Dong tien tu Workers KV (Giai doan B).
+// nonce -> proof = HMAC(Home DEK, nonce) -> POST /dongtien/meta -> ghep cac phan /dongtien/part -> kiem SHA-256 -> JSON.
+// Noi dung van la ban niem phong bang khoa phong taichinh (giai ma o trinh duyet nhu Giai doan A).
+async function loadDongTienFromKV() {
+  if (!session || !session.homeDekBytes) throw new Error("chua co Home DEK");
+  const nr = await fetch(WORKER_BASE + "/nonce", { cache: "no-store" });
+  if (!nr.ok) throw new Error("nonce HTTP " + nr.status);
+  const { token } = await nr.json();
+  const hk = await importHmacKey(session.homeDekBytes);
+  const proof = bytesToHex(await crypto.subtle.sign("HMAC", hk, utf8(token.split(".")[0])));
+  const post = (path, extra) => fetch(WORKER_BASE + path, {
+    method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ token, proof }, extra || {})),
+  });
+  const mr = await post("/dongtien/meta");
+  if (!mr.ok) throw new Error("meta HTTP " + mr.status);
+  const meta = await mr.json();
+  const cur = meta && meta.cur;
+  if (!cur || !/^[0-9a-f]{16}$/.test(cur.sha16 || "") || !(cur.parts >= 1 && cur.parts <= 100)) throw new Error("meta sai khuon");
+  const chunks = [];
+  for (let i = 0; i < cur.parts; i++) {
+    const pr = await post("/dongtien/part", { sha: cur.sha16, part: i });
+    if (!pr.ok) throw new Error("part " + i + " HTTP " + pr.status);
+    chunks.push(new Uint8Array(await pr.arrayBuffer()));
+  }
+  const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+  let off = 0; chunks.forEach((c) => { all.set(c, off); off += c.length; });
+  const h = bytesToHex(await crypto.subtle.digest("SHA-256", all)).slice(0, 16);
+  if (h !== cur.sha16) throw new Error("ma bam khong khop");
+  const doc = JSON.parse(new TextDecoder().decode(all));
+  doc._nguon = "kv:" + cur.sha16;
+  return doc;
+}
+
 // Tai file ma hoa (1 lan/phien, tai lai neu bao loi). Tra ve doc hoac null (chua co file / loi mang).
 async function loadExternalEnc(route) {
   if (!session.extEnc) session.extEnc = {};
   if (session.extEnc[route]) return session.extEnc[route];
   const ext = EXTERNAL_REPORTS[route];
   try {
-    const res = await fetch(ext.path, { cache: "no-cache" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const doc = await res.json();
+    let doc = null;
+    if (ext.kv) {
+      try { doc = await loadDongTienFromKV(); }
+      catch (e) { doc = null; if (window.console) console.warn("[" + route + "] KV loi, quay ve GitHub:", e && e.message); }
+    }
+    if (!doc) {
+      const res = await fetch(ext.path, { cache: "no-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      doc = await res.json();
+    }
     if (!doc || doc.kind !== "embedded-html" || doc.dept !== ext.dept || !doc.iv || !doc.ciphertext) throw new Error("sai khuon file");
     session.extEnc[route] = doc;
     return doc;
