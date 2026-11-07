@@ -1289,6 +1289,7 @@ async function loadDongTienFromKV() {
   if (!mr.ok) throw new Error("meta HTTP " + mr.status);
   const meta = await mr.json();
   const cur = meta && meta.cur;
+  if (cur && !cur.sha16) cur.sha16 = cur.sha; // meta do DongBoDongTienKV.py ghi khoa "sha"
   if (!cur || !/^[0-9a-f]{16}$/.test(cur.sha16 || "") || !(cur.parts >= 1 && cur.parts <= 100)) throw new Error("meta sai khuon");
   const chunks = [];
   for (let i = 0; i < cur.parts; i++) {
