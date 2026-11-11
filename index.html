@@ -1259,8 +1259,7 @@ function nwBars(root, box, d) {
 const EXTERNAL_REPORTS = {
   "taichinh-dongtien": {
     dept: "taichinh",
-    path: "./data/taichinh-dongtien.enc.json",
-    kv: true, // B6 (11/2026): doc Workers KV qua fg-dashboard-auth truoc, loi thi quay ve file GitHub
+    kv: true, // [DT-B6b] 11/2026: CHI doc Workers KV qua fg-dashboard-auth (da bo du phong file GitHub)
     name: "Báo cáo dòng tiền",
     icon: "💵",
     title: "Báo cáo dòng tiền",
@@ -1314,10 +1313,8 @@ async function loadExternalEnc(route) {
   try {
     let doc = null;
     if (ext.kv) {
-      try { doc = await loadDongTienFromKV(); }
-      catch (e) { doc = null; if (window.console) console.warn("[" + route + "] KV loi, quay ve GitHub:", e && e.message); }
-    }
-    if (!doc) {
+      doc = await loadDongTienFromKV(); // [DT-B6b]: loi KV -> nhay xuong catch, KHONG quay ve GitHub
+    } else {
       const res = await fetch(ext.path, { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       doc = await res.json();

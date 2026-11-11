@@ -3,3 +3,5 @@
 *.tmp
 *.tmp-*
 *.bak-*
+# [DT-B6b] 11/2026: du lieu Dong tien nam o Workers KV, khong dua len GitHub
+data/taichinh-dongtien.enc.json
